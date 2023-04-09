@@ -1,9 +1,6 @@
 ﻿using BenchmarkDotNet.Running;
-using GeneralTriggerKey.Attributes;
 using GeneralTriggerKey.Benchmark;
-using GeneralTriggerKey.KeyMap;
 using GeneralTriggerKey.Utils;
-using GeneralTriggerKey.Utils.Extensions;
 using Microsoft.Extensions.Logging;
 using static GeneralTriggerKey.Operator;
 
@@ -17,9 +14,10 @@ public class Program
         {
             GLogger.Instance.GetLogger<Program>().LogCritical(e.ExceptionObject as Exception, "CriticalHappened");
         };
-
-        InjectEnumsFromAssembly(typeof(Program).Assembly);
-
+        //InjectEnumsFromAssembly(typeof(Program).Assembly);
+        //var key=Q(MapTestEnum.A) & Q(MapTestEnum.B);
+        //Console.WriteLine(ShowAllNodes());
+        //Console.WriteLine(ToGraphvizCode());
         var summary = BenchmarkRunner.Run<CodeBenchmark>();
     }
 }

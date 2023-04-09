@@ -17,28 +17,45 @@ namespace GeneralTriggerKey.Benchmark
         [EnumAlia("testB", "TESTB")]
         B = 2,
         C = 3,
-        D = 4,
-        E = 5,
-        F = 6,
-        G = 7,
-        H = 8,
-        宣言,
-        选择,
-        发动,
     }
     [MemoryDiagnoser]
     public class CodeBenchmark
-    {
+    { 
+
         public CodeBenchmark()
+        {
+            
+        }
+
+        [GlobalSetup]
+        public void GlobalSetup()
         {
             InjectEnumsFromAssembly(typeof(CodeBenchmark).Assembly);
         }
+
         [Benchmark]
-        public void TestSameCodeAdd()
+        public void TestCodeAdd()
         {
-            var key = Q(MapTestEnum.F)&Q(MapTestEnum.H);
+            var key = Q(MapTestEnum.B)&Q(MapTestEnum.A);
 
             _ = Q("testA") * key;
+        }
+        [Benchmark]
+        public void TestCodebyStr()
+        {
+            var key = G("A|(B&C)");
+
+            _ = Q("testA") * key;
+        }
+
+        [Benchmark]
+        public void TestCodeCompareBoth()
+        {
+            var key1 = Q(MapTestEnum.B) & Q(MapTestEnum.A);
+
+            var key2 = Q(MapTestEnum.C) & Q(MapTestEnum.A);
+
+            _ = key1 * key2;
         }
     }
 }
