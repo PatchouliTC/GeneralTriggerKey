@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeneralTriggerKey.SyntaxPar
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeneralTriggerKey.UnitTest", "GeneralTriggerKey.UnitTest\GeneralTriggerKey.UnitTest.csproj", "{4418F732-9256-4585-B3C8-E03366FEE296}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeneralTriggerKey.Benchmark", "GeneralTriggerKey.Benchmark\GeneralTriggerKey.Benchmark.csproj", "{68972411-B28E-42D7-82F0-810CAC48FE19}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{4418F732-9256-4585-B3C8-E03366FEE296}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4418F732-9256-4585-B3C8-E03366FEE296}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4418F732-9256-4585-B3C8-E03366FEE296}.Release|Any CPU.Build.0 = Release|Any CPU
+		{68972411-B28E-42D7-82F0-810CAC48FE19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68972411-B28E-42D7-82F0-810CAC48FE19}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68972411-B28E-42D7-82F0-810CAC48FE19}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68972411-B28E-42D7-82F0-810CAC48FE19}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
