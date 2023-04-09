@@ -5,6 +5,9 @@ using System.Text;
 
 namespace GeneralTriggerKey.Utils
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public static class KMStorageWrapper
     {
         /// <summary>
@@ -60,7 +63,6 @@ namespace GeneralTriggerKey.Utils
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="value"></param>
-        /// <param name="id"></param>
         /// <returns></returns>
         public static bool TryConvert<T>(T value, out IKey key)
             where T : struct, Enum
@@ -100,7 +102,6 @@ namespace GeneralTriggerKey.Utils
         /// 给定项名称转换为运行时ID并返回实际key
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="id"></param>
         /// <returns></returns>
         public static bool TryConvert(string name, out IKey key)
         {

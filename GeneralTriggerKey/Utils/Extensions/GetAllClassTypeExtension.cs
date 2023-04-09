@@ -26,7 +26,6 @@ namespace GeneralTriggerKey.Utils.Extensions
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="assembly"></param>
-        /// <param name="targetAttribute"></param>
         /// <returns></returns>
 
         public static List<ClassWithAttributes<T>>? GetClassWithAttributesType<T>(this Assembly assembly)

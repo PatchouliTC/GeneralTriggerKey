@@ -4,6 +4,9 @@ using System;
 
 namespace GeneralTriggerKey.Utils
 {
+    /// <summary>
+    /// 内部日志创建器
+    /// </summary>
     public class GLogger
     {
         private ILoggerFactory _factory = NullLoggerFactory.Instance;

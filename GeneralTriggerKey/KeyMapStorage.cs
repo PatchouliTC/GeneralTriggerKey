@@ -62,7 +62,6 @@ namespace GeneralTriggerKey
         /// 自动发现指定程序集内所有需求映射的枚举表
         /// </summary>
         /// <param name="assembly">目标程序集</param>
-        /// </param>
         /// <exception cref="ArgumentException"></exception>
         /// <returns></returns>
         internal void AutoInjectEnumsMapping(Assembly assembly)
@@ -96,7 +95,6 @@ namespace GeneralTriggerKey
                 Groups.Add(_new_enum_group.Id, _new_enum_group);
                 _name_group_map.Add(_new_enum_group.Name!, _new_enum_group);
 
-                // 尝试注册枚举项
                 foreach (var _member in Enums.GetMembers(_enumType))
                 {
                     var _member_full_name = $"{_enumType.FullName}-{_member.Name}";
@@ -113,15 +111,10 @@ namespace GeneralTriggerKey
                     Keys.Add(_enum_member.Id, _enum_member);
                     _new_enum_group.RelateKeys.Add(_enum_member.OriginId, _enum_member);
 
-                    //添加别名
-
-                    //添加的是全称_字段名
                     _name_key_map.Add(_enum_member.Name!, _enum_member);
 
-                    ///尝试添加类型名_字段名
                     //var _tname_member_name = $"{_enumType.Name}_{_member.Name}";
 
-                    //直接尝试注册以当前枚举名称命名的字段
                     if (_name_key_map.TryAdd(_member.Name, _enum_member))
                     {
                         _enum_member.Alias.Add(_member.Name);

@@ -19,6 +19,9 @@ namespace GeneralTriggerKey.Attributes
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
     public class EnumAliaAttribute : Attribute
     {
+        /// <summary>
+        /// 别名组
+        /// </summary>
         public string[] Names;
         public EnumAliaAttribute(params string[] names)
         {

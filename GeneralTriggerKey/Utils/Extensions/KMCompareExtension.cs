@@ -6,6 +6,9 @@ using System.Text;
 
 namespace GeneralTriggerKey.Utils.Extensions
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public static class KMCompareExtension
     {
 
@@ -224,7 +227,7 @@ namespace GeneralTriggerKey.Utils.Extensions
         }
 
         /// <summary>
-        /// 获取两个key的和关系集合[&]
+        /// 获取两个key的和关系集合
         /// </summary>
         /// <param name="id1"></param>
         /// <param name="id2"></param>
@@ -338,7 +341,7 @@ namespace GeneralTriggerKey.Utils.Extensions
         }
 
         /// <summary>
-        /// 获取两个key的和关系集合[&]
+        /// 获取两个key的和关系集合
         /// <para>仅当key存在时获取,如果不存在则获取失败</para>
         /// </summary>
         /// <param name="id1"></param>

@@ -7,6 +7,9 @@ using System.Text;
 
 namespace GeneralTriggerKey
 {
+    /// <summary>
+    /// 封装操作
+    /// </summary>
     public static class Operator
     {
         /// <summary>

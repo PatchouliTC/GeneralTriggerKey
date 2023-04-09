@@ -25,7 +25,7 @@ namespace GeneralTriggerKey
         /// </summary>
         public readonly MapKeyType KeyType;
 
-        public GeneralKey(long id, bool isMultiKey, MapKeyType keyType)
+        internal GeneralKey(long id, bool isMultiKey, MapKeyType keyType)
         {
             Id = id;
             IsMultiKey = isMultiKey;
