@@ -5,6 +5,8 @@ VisualStudioVersion = 17.5.33516.290
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeneralTriggerKey", "GeneralTriggerKey\GeneralTriggerKey.csproj", "{94D14336-44F2-4AC6-B524-7079043D5960}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeneralTriggerKey.SyntaxParser", "GeneralTriggerKey.SyntaxParser\GeneralTriggerKey.SyntaxParser.csproj", "{E796EE94-0663-4B99-8720-556F3CF96E87}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{94D14336-44F2-4AC6-B524-7079043D5960}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{94D14336-44F2-4AC6-B524-7079043D5960}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{94D14336-44F2-4AC6-B524-7079043D5960}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E796EE94-0663-4B99-8720-556F3CF96E87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E796EE94-0663-4B99-8720-556F3CF96E87}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E796EE94-0663-4B99-8720-556F3CF96E87}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E796EE94-0663-4B99-8720-556F3CF96E87}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
