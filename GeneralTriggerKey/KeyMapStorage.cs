@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 
 namespace GeneralTriggerKey
 {
@@ -358,5 +359,207 @@ namespace GeneralTriggerKey
             return true;
         }
 
+        /// <summary>
+        /// 给定枚举类型转换为运行时ID
+        /// </summary>
+        /// <typeparam name="T">枚举项</typeparam>
+        /// <param name="value">实际ID</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public long Convert<T>(T value)
+            where T : struct, Enum
+        {
+            if (!_name_group_map.TryGetValue(typeof(T).FullName, out var group))
+                throw new ArgumentException(message: $"{typeof(T)} not be injected into global map.");
+
+            var _origin_value = Enums.GetMember(value)?.ToInt64();
+
+            if (_origin_value is null)
+                throw new ArgumentException(message: $"{value} not Find in Global Enums Cache,it should't be happened.");
+
+            if (!(group as IEnumGroup)!.RelateKeys.TryGetValue(_origin_value.Value, out var key))
+                throw new ArgumentException(message: $"{value} not Find in Register Enum {(group as KeyGroupUnit)!.Name} Cache.");
+            return key.Id;
+        }
+
+        /// <summary>
+        /// 给定项名称转换为运行时ID
+        /// </summary>
+        /// <param name="name">名称</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public long Convert(string name)
+        {
+            if (!_name_key_map.TryGetValue(name, out var key))
+                throw new ArgumentException(message: $"Not Find {name} enum value in convert cache");
+            return key.Id;
+        }
+
+        /// <summary>
+        /// 给定枚举类型转换为运行时ID
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public bool TryConvert<T>(T value, out long id)
+            where T : struct, Enum
+        {
+            id = -1;
+            if (!_name_group_map.TryGetValue(typeof(T).FullName, out var group))
+            {
+                _logger.LogWarning(message: $"{typeof(T)} not be injected into global map.");
+                return false;
+            }
+
+
+            var _origin_value = Enums.GetMember(value)?.ToInt64();
+
+            if (_origin_value is null)
+            {
+                _logger.LogWarning(message: $"{value} not Find in Global Enums Cache,it should't be happened.");
+                return false;
+            }
+
+
+            if (!(group as IEnumGroup)!.RelateKeys.TryGetValue(_origin_value.Value, out var key))
+            {
+                _logger.LogWarning(message: $"{value} not Find in Register Enum {(group as KeyGroupUnit)!.Name} Cache.");
+                return false;
+            }
+
+            id = key.Id;
+            return true;
+        }
+
+        /// <summary>
+        /// 给定枚举类型转换为运行时ID并返回实际key
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value"></param>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public bool TryConvert<T>(T value, out IKey key)
+            where T : struct, Enum
+        {
+            if (!_name_group_map.TryGetValue(typeof(T).FullName, out var group))
+            {
+                _logger.LogWarning(message: $"{typeof(T)} not be injected into global map.");
+                key = default!;
+                return false;
+            }
+
+            var _origin_value = Enums.GetMember(value)?.ToInt64();
+
+            if (_origin_value is null)
+            {
+                _logger.LogWarning(message: $"{value} not Find in Global Enums Cache,it should't be happened.");
+                key = default!;
+                return false;
+            }
+
+
+            if (!(group as IEnumGroup)!.RelateKeys.TryGetValue(_origin_value.Value, out key))
+            {
+                _logger.LogWarning(message: $"{value} not Find in Register Enum {(group as KeyGroupUnit)!.Name} Cache.");
+                key = default!;
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 给定项名称转换为运行时ID
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public bool TryConvert(string name, out long id)
+        {
+            if (!_name_key_map.TryGetValue(name, out var key))
+            {
+                _logger.LogWarning(message: $"Not Find {name} enum value in convert cache");
+                id = -1;
+                return false;
+            }
+
+            id = key.Id;
+            return true;
+        }
+
+        /// <summary>
+        /// 给定项名称转换为运行时ID并返回实际key
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public bool TryConvert(string name, out IKey key)
+        {
+            if (!_name_key_map.TryGetValue(name, out key))
+            {
+                _logger.LogWarning(message: $"Not Find {name} enum value in convert cache");
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 导出所有注册的Key详情
+        /// </summary>
+        public void OutPutKeysInfo()
+        {
+            foreach (var key in Keys.Values)
+            {
+                Console.WriteLine(key);
+            }
+        }
+
+        /// <summary>
+        /// 绘制整体注册的Key和他们唤醒关系
+        /// </summary>
+        /// <param name="ignore_single_node">忽略无关联的单一节点</param>
+        /// <returns>对应graphviz的节点图表代码</returns>
+        public string OutPutGraphviz(bool ignore_single_node = false)
+        {
+            StringBuilder _graphviz_graph = new StringBuilder();
+            StringBuilder _graphviz_nodes=new StringBuilder();
+            StringBuilder _graphviz_connection_line = new StringBuilder();
+            _graphviz_graph.AppendLine("digraph G {");
+
+            if (ignore_single_node)
+            {
+                HashSet<long> _has_line_keys = new HashSet<long>();
+
+                foreach (var key in Keys.Values)
+                {
+                    foreach (var _line in key.DAGParentKeys)
+                    {
+                        _graphviz_connection_line.AppendLine($"{_line.Id} -> {key.Id};");
+                        _has_line_keys.Add(_line.Id);
+                        _has_line_keys.Add(key.Id);
+                    }
+                }
+                foreach(var key in Keys.Values)
+                {
+                    if(_has_line_keys.Contains(key.Id))
+                        _graphviz_nodes.AppendLine(key.ToGraphvizNodeString());
+                }
+            }
+            else
+            {
+                foreach (var key in Keys.Values)
+                {
+                    _graphviz_nodes.AppendLine(key.ToGraphvizNodeString());
+                    foreach (var _line in key.DAGParentKeys)
+                        _graphviz_connection_line.AppendLine($"{_line.Id} -> {key.Id};");
+                }
+            }
+
+            _graphviz_graph.Append(_graphviz_nodes);
+            _graphviz_graph.Append(_graphviz_connection_line);
+            _graphviz_graph.AppendLine("}");
+
+            return _graphviz_graph.ToString();
+        }
     }
 }
