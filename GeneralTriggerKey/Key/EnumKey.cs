@@ -7,7 +7,7 @@ namespace GeneralTriggerKey.Key
     /// <summary>
     /// 对应枚举的key[单项key]
     /// </summary>
-    public class EnumKey : KeyGroupUnit, IEnumKey
+    internal class EnumKey : KeyGroupUnit, IEnumKey
     {
         public IEnumGroup BelongEnumGroup { get; private set; }
 

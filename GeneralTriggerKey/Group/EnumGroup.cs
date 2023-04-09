@@ -7,7 +7,7 @@ using System.Xml.Linq;
 
 namespace GeneralTriggerKey.Group
 {
-    public class EnumGroup : KeyGroupUnit, IEnumGroup
+    internal class EnumGroup : KeyGroupUnit, IEnumGroup
     {
         public Type Type { get; private set; }
 

@@ -6,7 +6,7 @@ namespace GeneralTriggerKey.Key
     /// <summary>
     /// 运行时手动增添Key
     /// </summary>
-    public class RunTimeKey : KeyGroupUnit, IRunTimeKey
+    internal class RunTimeKey : KeyGroupUnit, IRunTimeKey
     {
         public bool IsMultiKey => false;
 

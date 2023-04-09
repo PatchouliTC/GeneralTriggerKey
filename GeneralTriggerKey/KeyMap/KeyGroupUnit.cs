@@ -4,7 +4,7 @@ using System.Text;
 
 namespace GeneralTriggerKey.KeyMap
 {
-    public abstract class KeyGroupUnit
+    internal abstract class KeyGroupUnit
     {
         public long Id { get; private set; }
         public string? Name { get; private set; }

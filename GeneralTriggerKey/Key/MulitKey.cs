@@ -9,7 +9,7 @@ namespace GeneralTriggerKey.Key
     /// <summary>
     /// 组合型key
     /// </summary>
-    public class MulitKey : KeyGroupUnit, IMultiKey
+    internal class MulitKey : KeyGroupUnit, IMultiKey
     {
         public bool IsMultiKey => true;
         public Dictionary<long, IKey> ChildKeys { get; private set; }

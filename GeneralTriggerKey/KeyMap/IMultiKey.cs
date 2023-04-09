@@ -7,7 +7,7 @@ namespace GeneralTriggerKey.KeyMap
     /// <summary>
     /// 组合key
     /// </summary>
-    public interface IMultiKey : IKey
+    internal interface IMultiKey : IKey
     {
         /// <summary>
         /// 是否包含了其他联合键

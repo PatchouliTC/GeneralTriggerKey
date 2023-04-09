@@ -7,7 +7,7 @@ namespace GeneralTriggerKey.KeyMap
     /// <summary>
     /// 枚举键
     /// </summary>
-    public interface IEnumKey : IKey
+    internal interface IEnumKey : IKey
     {
         /// <summary>
         /// 对应key的原始ID
