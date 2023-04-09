@@ -15,13 +15,13 @@ using System.Text;
 
 namespace GeneralTriggerKey
 {
-    public sealed class KeyMapStorage
+    internal sealed class KeyMapStorage
     {
         #region Instance
         private static KeyMapStorage _instance = default!;
         private ILogger _logger;
         private Hashids _hashids;
-        public static KeyMapStorage Instance
+        internal static KeyMapStorage Instance
         {
             get
             {
@@ -37,8 +37,8 @@ namespace GeneralTriggerKey
         #endregion
 
         #region Prop
-        public Dictionary<long, IKey> Keys { get; private set; } = new Dictionary<long, IKey>();
-        public Dictionary<long, IGroup> Groups { get; private set; } = new Dictionary<long, IGroup>();
+        internal Dictionary<long, IKey> Keys { get; private set; } = new Dictionary<long, IKey>();
+        internal Dictionary<long, IGroup> Groups { get; private set; } = new Dictionary<long, IGroup>();
         #endregion
 
         #region Field
@@ -65,7 +65,7 @@ namespace GeneralTriggerKey
         /// </param>
         /// <exception cref="ArgumentException"></exception>
         /// <returns></returns>
-        public void AutoInjectEnumsMapping(Assembly assembly)
+        internal void AutoInjectEnumsMapping(Assembly assembly)
         {
             _logger.LogDebug($"Scan {assembly.FullName} Enums...");
             var _use_mark_enums_types = assembly.GetClassWithAttributeType<MapEnumAttribute>();
@@ -99,7 +99,7 @@ namespace GeneralTriggerKey
                 // 尝试注册枚举项
                 foreach (var _member in Enums.GetMembers(_enumType))
                 {
-                    var _member_full_name = $"{_enumType.FullName}_{_member.Name}";
+                    var _member_full_name = $"{_enumType.FullName}-{_member.Name}";
 
                     if (_name_key_map.ContainsKey(_member_full_name))
                     {
@@ -154,7 +154,7 @@ namespace GeneralTriggerKey
         /// <param name="range">Key隶属域</param>
         /// <param name="force_add">是否强制添加</param>
         /// <returns></returns>
-        public bool TryGetOrAddSingleKey(out long _runtime_add_key_id, string callName, string range = "GLOBAL", bool force_add = false)
+        internal bool TryGetOrAddSingleKey(out long _runtime_add_key_id, string callName, string range = "GLOBAL", bool force_add = false)
         {
             if (_name_key_map.TryGetValue(callName, out var _exist_key))
             {
@@ -185,7 +185,7 @@ namespace GeneralTriggerKey
         /// <param name="keyType">联合键类型</param>
         /// <param name="only_try">仅限尝试注册获取,如果不存在则返回失败</param>
         /// <returns></returns>
-        public bool TryRegisterMultiKey(out long multi_key_runtime_id, MapKeyType keyType, long[] register_key_ids, bool only_try = false)
+        internal bool TryRegisterMultiKey(out long multi_key_runtime_id, MapKeyType keyType, long[] register_key_ids, bool only_try = false)
         {
             if (register_key_ids.Length == 0)
             {
@@ -195,7 +195,7 @@ namespace GeneralTriggerKey
 
             var _distinct_and_sort_ids = register_key_ids.Distinct().OrderBy(x => x);
 
-            var _key_hash = $"{Enums.GetName(keyType)}_{_hashids.EncodeLong(_distinct_and_sort_ids)}";
+            var _key_hash = $"{Enums.GetName(keyType)}-{_hashids.EncodeLong(_distinct_and_sort_ids)}";
             if (_created_multi_key_cache.TryGetValue(_key_hash, out multi_key_runtime_id))
                 return true;
             else
@@ -253,7 +253,7 @@ namespace GeneralTriggerKey
 
             var _after_order = _fact_relate_all_single_keys.OrderBy(x => x);
             //排序，生成唯一hashid
-            string _after_hash = $"M-{Enums.GetName(keyType)}_{_hashids.EncodeLong(_after_order)}";
+            string _after_hash = $"M={Enums.GetName(keyType)}-{_hashids.EncodeLong(_after_order)}";
             //判断是否是已存在联合键值
             if (_name_key_map.TryGetValue(_after_hash, out var _key))
             {
@@ -366,7 +366,7 @@ namespace GeneralTriggerKey
         /// <param name="value">实际ID</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public long Convert<T>(T value)
+        internal long Convert<T>(T value)
             where T : struct, Enum
         {
             if (!_name_group_map.TryGetValue(typeof(T).FullName, out var group))
@@ -388,7 +388,7 @@ namespace GeneralTriggerKey
         /// <param name="name">名称</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public long Convert(string name)
+        internal long Convert(string name)
         {
             if (!_name_key_map.TryGetValue(name, out var key))
                 throw new ArgumentException(message: $"Not Find {name} enum value in convert cache");
@@ -402,7 +402,7 @@ namespace GeneralTriggerKey
         /// <param name="value"></param>
         /// <param name="id"></param>
         /// <returns></returns>
-        public bool TryConvert<T>(T value, out long id)
+        internal bool TryConvert<T>(T value, out long id)
             where T : struct, Enum
         {
             id = -1;
@@ -439,7 +439,7 @@ namespace GeneralTriggerKey
         /// <param name="value"></param>
         /// <param name="key"></param>
         /// <returns></returns>
-        public bool TryConvert<T>(T value, out IKey key)
+        internal bool TryConvert<T>(T value, out IKey key)
             where T : struct, Enum
         {
             if (!_name_group_map.TryGetValue(typeof(T).FullName, out var group))
@@ -474,7 +474,7 @@ namespace GeneralTriggerKey
         /// <param name="name"></param>
         /// <param name="id"></param>
         /// <returns></returns>
-        public bool TryConvert(string name, out long id)
+        internal bool TryConvert(string name, out long id)
         {
             if (!_name_key_map.TryGetValue(name, out var key))
             {
@@ -493,7 +493,7 @@ namespace GeneralTriggerKey
         /// <param name="name"></param>
         /// <param name="key"></param>
         /// <returns></returns>
-        public bool TryConvert(string name, out IKey key)
+        internal bool TryConvert(string name, out IKey key)
         {
             if (!_name_key_map.TryGetValue(name, out key))
             {
@@ -506,12 +506,15 @@ namespace GeneralTriggerKey
         /// <summary>
         /// 导出所有注册的Key详情
         /// </summary>
-        public void OutPutKeysInfo()
+        public string OutPutKeysInfo()
         {
+            StringBuilder sb = new StringBuilder();
+
             foreach (var key in Keys.Values)
             {
-                Console.WriteLine(key);
+                sb.Append(key);
             }
+            return sb.ToString();
         }
 
         /// <summary>

@@ -4,21 +4,21 @@ using System.Reflection;
 
 namespace GeneralTriggerKey.Utils.Extensions
 {
-    public class ClassWithAttributes<T>
+    internal class ClassWithAttributes<T>
          where T : Attribute
     {
         public List<T> Attribute { get; set; } = null!;
         public Type ClassInfo { get; set; } = null!;
     }
 
-    public class ClassWithAttribute<T>
+    internal class ClassWithAttribute<T>
      where T : Attribute
     {
         public T Attribute { get; set; } = null!;
         public Type ClassInfo { get; set; } = null!;
     }
 
-    public static class GetAllClassTypeExtension
+    internal static class GetAllClassTypeExtension
     {
         /// <summary>
         /// 获取该程序集中携带指定特性标签的所有类的类型列表
@@ -63,7 +63,7 @@ namespace GeneralTriggerKey.Utils.Extensions
         /// <typeparam name="T"></typeparam>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        public static List<ClassWithAttribute<T>>? GetClassWithAttributeType<T>(this Assembly assembly)
+        internal static List<ClassWithAttribute<T>>? GetClassWithAttributeType<T>(this Assembly assembly)
             where T : Attribute
         {
             List<ClassWithAttribute<T>> _list = new List<ClassWithAttribute<T>>();
