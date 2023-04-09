@@ -51,7 +51,7 @@ IdCreator.Instance.SetCustomGenerator(114514, DateTime.UtcNow);
 Warning:If start inject or any get/create nodes operator,this creator won't able to change seed [To avoid id collision]
 
 ## Output for check
-ShowAllNodes()
+ShowAllNodes() can let you know every node that been registered
 ```
 ************Node List************
 [EnumKey](184549376)<A>-OId:1=>Belong:[EnumGroup](171966464)<GeneralTriggerKey.Benchmark.MapTestEnum>
@@ -62,7 +62,7 @@ ShowAllNodes()
   [EnumKey](184549377)<B>-OId:2=>Belong:[EnumGroup](171966464)<GeneralTriggerKey.Benchmark.MapTestEnum>
 ```
 
-ToGraphvizCode()
+ToGraphvizCode() can generate graphviz code,you can copy them into [GraphvizOnline](https://dreampuf.github.io/GraphvizOnline/) or other generate to know relationship
 ```
 ************Copy Code************
 digraph G {
