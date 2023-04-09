@@ -5,7 +5,7 @@ using System.Text;
 
 namespace GeneralTriggerKey.Utils
 {
-    internal static class KMStorageWrapper
+    public static class KMStorageWrapper
     {
         /// <summary>
         /// 运行时增添key
@@ -14,7 +14,7 @@ namespace GeneralTriggerKey.Utils
         /// <param name="range">Key隶属域</param>
         /// <param name="force_add">是否强制添加</param>
         /// <returns></returns>
-        internal static long GetOrAddSingleKey(string callName, string range = "GLOBAL", bool force_add = false)
+        public static long GetOrAddSingleKey(string callName, string range = "GLOBAL", bool force_add = false)
         {
             if (KeyMapStorage.Instance.TryGetOrAddSingleKey(out var _id, callName, range, force_add))
                 return _id;
@@ -29,7 +29,7 @@ namespace GeneralTriggerKey.Utils
         /// <param name="exception_ignore">是否忽略异常【忽略后失败返回-1】</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        internal static long Convert<T>(T value, bool exception_ignore = false)
+        public static long Convert<T>(T value, bool exception_ignore = false)
             where T : struct, Enum
         {
             if (exception_ignore)
@@ -50,7 +50,7 @@ namespace GeneralTriggerKey.Utils
         /// <param name="value"></param>
         /// <param name="id"></param>
         /// <returns></returns>
-        internal static bool TryConvert<T>(T value, out long id)
+        public static bool TryConvert<T>(T value, out long id)
             where T : struct, Enum
         {
             return KeyMapStorage.Instance.TryConvert(value, out id);
@@ -62,7 +62,7 @@ namespace GeneralTriggerKey.Utils
         /// <param name="value"></param>
         /// <param name="id"></param>
         /// <returns></returns>
-        internal static bool TryConvert<T>(T value, out IKey key)
+        public static bool TryConvert<T>(T value, out IKey key)
             where T : struct, Enum
         {
             return KeyMapStorage.Instance.TryConvert(value, out key);
@@ -74,7 +74,7 @@ namespace GeneralTriggerKey.Utils
         /// <param name="exception_ignore">是否忽略异常【忽略后失败返回-1】</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        internal static long Convert(string name, bool exception_ignore = false)
+        public static long Convert(string name, bool exception_ignore = false)
         {
             if (exception_ignore)
             {
@@ -92,7 +92,7 @@ namespace GeneralTriggerKey.Utils
         /// <param name="name"></param>
         /// <param name="id"></param>
         /// <returns></returns>
-        internal static bool TryConvert(string name, out long id)
+        public static bool TryConvert(string name, out long id)
         {
             return KeyMapStorage.Instance.TryConvert(name, out id);
         }
@@ -102,26 +102,26 @@ namespace GeneralTriggerKey.Utils
         /// <param name="name"></param>
         /// <param name="id"></param>
         /// <returns></returns>
-        internal static bool TryConvert(string name, out IKey key)
+        public static bool TryConvert(string name, out IKey key)
         {
             return KeyMapStorage.Instance.TryConvert(name, out key);
         }
 
-        internal static bool TryRegisterRunTimeKey(out long runtime_key_id, string callName, string range = "GLOBAL")
+        public static bool TryRegisterRunTimeKey(out long runtime_key_id, string callName, string range = "GLOBAL")
         {
             return KeyMapStorage.Instance.TryGetOrAddSingleKey(out runtime_key_id, callName, range);
         }
-        internal static bool TryRegisterMultiKey(out long multi_key_runtime_id, MapKeyType keyType = default, params long[] register_key_ids)
+        public static bool TryRegisterMultiKey(out long multi_key_runtime_id, MapKeyType keyType = default, params long[] register_key_ids)
         {
             return KeyMapStorage.Instance.TryRegisterMultiKey(out multi_key_runtime_id, keyType, register_key_ids, false);
         }
 
-        internal static bool TryRegisterMultiKeyIfExist(out long multi_key_runtime_id, MapKeyType keyType = default, params long[] register_key_ids)
+        public static bool TryRegisterMultiKeyIfExist(out long multi_key_runtime_id, MapKeyType keyType = default, params long[] register_key_ids)
         {
             return KeyMapStorage.Instance.TryRegisterMultiKey(out multi_key_runtime_id, keyType, register_key_ids, true);
         }
 
-        internal static bool TryGetKey<T>(long id, out T value)
+        public static bool TryGetKey<T>(long id, out T value)
             where T : IKey
         {
             if (KeyMapStorage.Instance.Keys.TryGetValue(id, out var key))

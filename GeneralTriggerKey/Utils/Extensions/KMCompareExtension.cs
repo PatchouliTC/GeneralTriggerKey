@@ -6,7 +6,7 @@ using System.Text;
 
 namespace GeneralTriggerKey.Utils.Extensions
 {
-    internal static class KMCompareExtension
+    public static class KMCompareExtension
     {
 
         /// <summary>

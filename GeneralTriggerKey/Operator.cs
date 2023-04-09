@@ -2,6 +2,7 @@
 using GeneralTriggerKey.Utils;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 
 namespace GeneralTriggerKey
@@ -86,6 +87,15 @@ namespace GeneralTriggerKey
         public static string ShowAllNodes()
         {
             return KeyMapStorage.Instance.OutPutKeysInfo();
+        }
+
+        /// <summary>
+        /// 注册指定程序集中所有被标记的枚举列表
+        /// </summary>
+        /// <param name="assembly"></param>
+        public static void InjectEnumsFromAssembly(Assembly assembly)
+        {
+            KeyMapStorage.Instance.AutoInjectEnumsMapping(assembly);
         }
 
     }

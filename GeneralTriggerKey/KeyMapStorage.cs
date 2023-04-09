@@ -509,11 +509,9 @@ namespace GeneralTriggerKey
         public string OutPutKeysInfo()
         {
             StringBuilder sb = new StringBuilder();
-
+            sb.AppendLine("************Node List************");
             foreach (var key in Keys.Values)
-            {
-                sb.Append(key);
-            }
+                sb.AppendLine(key.ToString());
             return sb.ToString();
         }
 
@@ -527,6 +525,7 @@ namespace GeneralTriggerKey
             StringBuilder _graphviz_graph = new StringBuilder();
             StringBuilder _graphviz_nodes=new StringBuilder();
             StringBuilder _graphviz_connection_line = new StringBuilder();
+            _graphviz_graph.AppendLine("************Copy Code************");
             _graphviz_graph.AppendLine("digraph G {");
 
             if (ignore_single_node)
