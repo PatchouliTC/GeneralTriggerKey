@@ -10,4 +10,8 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\GeneralTriggerKey.SyntaxParser\GeneralTriggerKey.SyntaxParser.csproj" />
+  </ItemGroup>
+
 </Project>
