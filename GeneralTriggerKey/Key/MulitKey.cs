@@ -9,17 +9,15 @@ namespace GeneralTriggerKey.Key
     /// <summary>
     /// 组合型key
     /// </summary>
-    internal class MulitKey : KeyGroupUnit, IMultiKey
+    internal sealed class MulitKey : SimpleKeyNode, IMultiKey
     {
         public bool IsMultiKey => true;
+
         public Dictionary<long, IKey> ChildKeys { get; private set; }
-        public HashSet<string>? Alias { get; private set; }
         public List<IMultiKey> ParentKeys { get; private set; }
         public HashSet<long> RelateSingleKeys { get; private set; }
         public string DisplayName { get; private set; }
         public long[] MultiKeys { get; private set; }
-
-        public bool HasAlias => !(this.Alias is null || this.Alias.Count == 0);
         public bool HasOtherMultiKey => ChildKeys.Values.Any(x => x.IsMultiKey);
 
         #region Search Cache
@@ -31,6 +29,9 @@ namespace GeneralTriggerKey.Key
 
         private HashSet<long> _overlaps_search_cache = new HashSet<long>();
         private HashSet<long> _checked_overlaps_keys = new HashSet<long>();
+
+        //private HashSet<long> _triggerself_search_cache = new HashSet<long>();
+        //private HashSet<long> _checked_triggerself_keys = new HashSet<long>();
         #endregion
         public MulitKey(long id, MapKeyType keyType, HashSet<long> relatesinglekeys, string name, IEnumerable<long> _relate_keys, HashSet<string>? alias = null)
             : base(id, keyType, name)
@@ -38,9 +39,7 @@ namespace GeneralTriggerKey.Key
             ChildKeys = new Dictionary<long, IKey>();
             ParentKeys = new List<IMultiKey>();
             RelateSingleKeys = relatesinglekeys ?? new HashSet<long>();
-            Alias = alias;
 
-            //concat self displayname
             var _singlenamebuilder = new StringBuilder();
             if (KeyRelateType == MapKeyType.AND)
             {
@@ -85,16 +84,18 @@ namespace GeneralTriggerKey.Key
             if (_checked_contain_keys.Contains(id))
                 return false;
             _checked_contain_keys.Add(id);
-
+            //检查子集和全展开后的单例键是否存在
             if (ChildKeys.ContainsKey(id) || RelateSingleKeys.Contains(id))
             {
                 _contain_search_cache.Add(id);
                 return true;
             }
 
+            //不存在则检查所有复合键类型的子集
             foreach (var child in ChildKeys.Values.Where(x => x.IsMultiKey))
             {
                 var _temp = child as IMultiKey;
+                //递归遍历深层级
                 if (_temp!.Contains(id))
                 {
                     _contain_search_cache.Add(id);
@@ -102,6 +103,7 @@ namespace GeneralTriggerKey.Key
                 }
 
             }
+            //如果当前项是OR,需要将singlekey中是AND关系的联合键取出并进行检查包含性
             if (KeyRelateType == MapKeyType.OR)
             {
                 foreach (var _single_key in RelateSingleKeys)
@@ -120,7 +122,6 @@ namespace GeneralTriggerKey.Key
             }
             return false;
         }
-
         public bool IsRSupersetOf(IMultiKey key)
         {
             if (_supersetof_search_cache.Contains(key.Id))
@@ -170,8 +171,8 @@ namespace GeneralTriggerKey.Key
 
             foreach (var data in ChildKeys)
             {
-                if (data.Value is MulitKey _m_key)
-                    _str_builder.Append($"{_m_key.ToString(_next_retraction)}\n");
+                if (data.Value is MulitKey)
+                    _str_builder.Append($"{(data.Value as MulitKey)!.ToString(_next_retraction)}\n");
                 else
                     _str_builder.Append($"{_prefix}  {data.Value}\n");
             }

@@ -18,6 +18,14 @@ namespace GeneralTriggerKey.KeyMap
         /// </summary>
         Group,
         /// <summary>
+        /// 层级键
+        /// </summary>
+        LEVEL,
+        /// <summary>
+        /// 桥接键
+        /// </summary>
+        Bridge,
+        /// <summary>
         /// 与关系
         /// </summary>
         AND,

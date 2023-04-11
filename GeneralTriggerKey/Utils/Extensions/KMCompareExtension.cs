@@ -6,9 +6,6 @@ using System.Text;
 
 namespace GeneralTriggerKey.Utils.Extensions
 {
-    /// <summary>
-    /// 
-    /// </summary>
     public static class KMCompareExtension
     {
 
@@ -22,21 +19,37 @@ namespace GeneralTriggerKey.Utils.Extensions
         {
             if (KMStorageWrapper.TryGetKey(id1, out IKey value1) && KMStorageWrapper.TryGetKey(id2, out IKey value2))
             {
-
-                if (!value1.IsMultiKey && !value2.IsMultiKey)
+                if (value1 is IBridgeKey bkey1 && value2 is IBridgeKey bkey2)
+                {
+                    return (bkey1.JumpLevel == bkey2.JumpLevel)
+                        && (bkey1.Current.CanTriggerNode.Contains(bkey2.Current.Id))
+                        && (bkey1.Next.CanTriggerNode.Contains(bkey2.Next.Id));
+                }
+                else if (value1 is ILevelKey lkey1 && value2 is ILevelKey lkey2)
+                {
+                    return (lkey1.MaxDepth >= lkey2.MaxDepth)
+                        && (lkey1.CanTriggerNode.Contains(lkey2.Id));
+                }
+                //都不是,比较相等性
+                else if (!value1.IsMultiKey && !value2.IsMultiKey)
                 {
                     return id1 == id2;
                 }
+                //都是联合键且联合模式相等,比较关联的单一键列表超集关系
                 else if ((value1.IsMultiKey && value2.IsMultiKey &&
                     ((value1 as IMultiKey)!.KeyRelateType == (value2 as IMultiKey)!.KeyRelateType)
                     ))
                 {
                     return (value1 as IMultiKey)!.IsRSupersetOf((value2 as IMultiKey)!);
                 }
+                //当前是联合键,要比较对象是单一键
+                //或者两者都是联合键,但是当前是OR,要比较对象是AND
                 else if ((value1.IsMultiKey && !value2.IsMultiKey) || (value1.IsMultiKey && value2.IsMultiKey &&
                     (value1 as IMultiKey)!.KeyRelateType == MapKeyType.OR &&
                      (value2 as IMultiKey)!.KeyRelateType == MapKeyType.AND))
                 {
+                    //调用第一个联合键的Contains方法,对其所有子集和子集的子集进行深度搜索
+                    //第一次调用较慢[需要深度递归,并且作为or关系同时需要对relatesinglekeys进行检查]
                     return (value1 as IMultiKey)!.Contains(value2.Id);
                 }
 
@@ -54,7 +67,15 @@ namespace GeneralTriggerKey.Utils.Extensions
         {
             if (KMStorageWrapper.TryGetKey(id1, out IKey value1) && KMStorageWrapper.TryGetKey(id2, out IKey value2))
             {
-                if (!value1.IsMultiKey && !value2.IsMultiKey)
+                if (value1 is IBridgeKey bkey1 && value2 is IBridgeKey bkey2)
+                {
+                    return id1 == id2;
+                }
+                else if (value1 is ILevelKey lkey1 && value2 is ILevelKey lkey2)
+                {
+                    return id1.Contains(id2);
+                }
+                else if (!value1.IsMultiKey && !value2.IsMultiKey)
                 {
                     return id1 == id2;
                 }
@@ -77,7 +98,7 @@ namespace GeneralTriggerKey.Utils.Extensions
         }
 
         /// <summary>
-        /// 当前键能否满足后者条件
+        /// 当前键能否触发后者条件
         /// </summary>
         /// <param name="current_id"></param>
         /// <param name="check_id"></param>
@@ -88,22 +109,39 @@ namespace GeneralTriggerKey.Utils.Extensions
             {
                 KMStorageWrapper.TryGetKey(force_contain_key_id, out IKey _need_contain_key);
 
-                if (!value1.IsMultiKey && !value2.IsMultiKey)
+                if (value1 is IBridgeKey bkey1 && value2 is IBridgeKey bkey2)
+                {
+                    return bkey1.CanTriggerNode.Contains(bkey2.Id);
+                }
+                else if (value1 is ILevelKey lkey1 && value2 is ILevelKey lkey2)
+                {
+                    return lkey1.CanTriggerNode.Contains(lkey2.Id);
+                }
+                //双单例键,比较值相等
+                else if (!value1.IsMultiKey && !value2.IsMultiKey)
                 {
                     if (_need_contain_key is null)
                         return value1.Id == value2.Id;
                     return value1.Id == value2.Id && value1.Id == _need_contain_key.Id;
                 }
+                //当前项是单键时,被比较项必须是or关系[and关系一定无法触发]
                 else if (!value1.IsMultiKey && value2.IsMultiKey && (value2 as IMultiKey)!.KeyRelateType == MapKeyType.OR)
                 {
                     if (_need_contain_key is null)
                         return value1.CanTriggerNode.Contains(value2.Id);
                     return _need_contain_key.Id == value1.Id && value1.CanTriggerNode.Contains(value2.Id);
+                    //var _multi_key = (value2 as IMultiKey);
+                    ////只要or中包含该基础节点即可
+                    //if (_need_contain_key is null)
+                    //    return _multi_key!.RelateSingleKeys.Contains(value1.Id);
+                    //return _need_contain_key.Id == value1.Id && _multi_key!.RelateSingleKeys.Contains(value1.Id);
                 }
-
+                //被比较项联合键+当前被比较对象能否触发目标对象
+                //当前项必须是and关系,or关系无比较意义
                 else if (value1.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == MapKeyType.AND)
                 {
                     var _multi_key = (value1 as IMultiKey);
+                    //项2是单例键,直接看项1的singlekey是否包含即可
                     if (!value2.IsMultiKey)
                     {
                         if (_need_contain_key is null)
@@ -140,7 +178,17 @@ namespace GeneralTriggerKey.Utils.Extensions
         {
             if (KMStorageWrapper.TryGetKey(id1, out IKey value1) && KMStorageWrapper.TryGetKey(id2, out IKey value2))
             {
-                if (value1.IsMultiKey && value2.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == (value2 as IMultiKey)!.KeyRelateType)
+                if (value1 is IBridgeKey bkey1 && value2 is IBridgeKey bkey2)
+                {
+                    id_result = -1;
+                    return false;
+                }
+                else if (value1 is ILevelKey lkey1 && value2 is ILevelKey lkey2)
+                {
+                    id_result = -1;
+                    return false;
+                }
+                else if (value1.IsMultiKey && value2.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == (value2 as IMultiKey)!.KeyRelateType)
                 {
                     var _temp = (value1 as IMultiKey)!.RelateSingleKeys.ToHashSet();
                     _temp.SymmetricExceptWith((value2 as IMultiKey)!.RelateSingleKeys);
@@ -173,9 +221,20 @@ namespace GeneralTriggerKey.Utils.Extensions
         /// <returns></returns>
         public static bool IntersectWith(this long id1, long id2, out long id_result)
         {
+
             if (KMStorageWrapper.TryGetKey(id1, out IKey value1) && KMStorageWrapper.TryGetKey(id2, out IKey value2))
             {
-                if (value1.IsMultiKey && value2.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == (value2 as IMultiKey)!.KeyRelateType)
+                if (value1 is IBridgeKey bkey1 && value2 is IBridgeKey bkey2)
+                {
+                    id_result = -1;
+                    return false;
+                }
+                else if (value1 is ILevelKey lkey1 && value2 is ILevelKey lkey2)
+                {
+                    id_result = -1;
+                    return false;
+                }
+                else if (value1.IsMultiKey && value2.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == (value2 as IMultiKey)!.KeyRelateType)
                 {
                     var _temp = (value1 as IMultiKey)!.RelateSingleKeys.ToHashSet();
                     _temp.IntersectWith((value2 as IMultiKey)!.RelateSingleKeys);
@@ -227,7 +286,7 @@ namespace GeneralTriggerKey.Utils.Extensions
         }
 
         /// <summary>
-        /// 获取两个key的和关系集合
+        /// 获取两个key的和关系集合[&]
         /// </summary>
         /// <param name="id1"></param>
         /// <param name="id2"></param>
@@ -236,6 +295,7 @@ namespace GeneralTriggerKey.Utils.Extensions
         {
             if (KMStorageWrapper.TryGetKey(id1, out IKey value1) && KMStorageWrapper.TryGetKey(id2, out IKey value2))
             {
+                //二者均不为or关系
                 if (
                     !(value1.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == MapKeyType.OR) &&
                     !(value2.IsMultiKey && (value2 as IMultiKey)!.KeyRelateType == MapKeyType.OR)
@@ -243,6 +303,9 @@ namespace GeneralTriggerKey.Utils.Extensions
                 {
                     return KMStorageWrapper.TryRegisterMultiKey(out id_result, MapKeyType.AND, id1, id2);
                 }
+                //两个为or关系
+                //拆开两组单列键进行AND操作的笛卡尔积
+                //最终获得的数组之间再进行or关系
                 else if (
                     (value1.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == MapKeyType.OR) &&
                     (value2.IsMultiKey && (value2 as IMultiKey)!.KeyRelateType == MapKeyType.OR)
@@ -290,6 +353,7 @@ namespace GeneralTriggerKey.Utils.Extensions
                     id_result = _temp;
                     return true;
                 }
+                //一个是or另一个单例键
                 else
                 {
                     var _or_relate_instance = (value1.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == MapKeyType.OR) ? (value1 as IMultiKey) : (value2 as IMultiKey);
@@ -341,7 +405,7 @@ namespace GeneralTriggerKey.Utils.Extensions
         }
 
         /// <summary>
-        /// 获取两个key的和关系集合
+        /// 获取两个key的和关系集合[&]
         /// <para>仅当key存在时获取,如果不存在则获取失败</para>
         /// </summary>
         /// <param name="id1"></param>
@@ -351,6 +415,7 @@ namespace GeneralTriggerKey.Utils.Extensions
         {
             if (KMStorageWrapper.TryGetKey(id1, out IKey value1) && KMStorageWrapper.TryGetKey(id2, out IKey value2))
             {
+                //二者均不为or关系
                 if (
                     !(value1.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == MapKeyType.OR) &&
                     !(value2.IsMultiKey && (value2 as IMultiKey)!.KeyRelateType == MapKeyType.OR)
@@ -358,6 +423,9 @@ namespace GeneralTriggerKey.Utils.Extensions
                 {
                     return KMStorageWrapper.TryRegisterMultiKeyIfExist(out id_result, MapKeyType.AND, id1, id2);
                 }
+                //两个为or关系
+                //拆开两组单列键进行AND操作的笛卡尔积
+                //最终获得的数组之间再进行or关系
                 else if (
                     (value1.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == MapKeyType.OR) &&
                     (value2.IsMultiKey && (value2 as IMultiKey)!.KeyRelateType == MapKeyType.OR)
@@ -405,6 +473,7 @@ namespace GeneralTriggerKey.Utils.Extensions
                     id_result = _temp;
                     return true;
                 }
+                //一个是or另一个单例键
                 else
                 {
                     var _or_relate_instance = (value1.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == MapKeyType.OR) ? (value1 as IMultiKey) : (value2 as IMultiKey);
@@ -453,6 +522,29 @@ namespace GeneralTriggerKey.Utils.Extensions
             }
             id_result = -1;
             return false;
+        }
+
+        /// <summary>
+        /// 获取两个桥接key的层级key
+        /// </summary>
+        /// <param name=""></param>
+        /// <param name="id2"></param>
+        /// <param name="id_result"></param>
+        /// <returns></returns>
+        public static bool DivideWith(this long id1, long id2, out long id_result)
+        {
+            return KeyMapStorage.Instance.TryRegisterLevelKey(out id_result, id1, id2);
+        }
+        /// <summary>
+        /// 获取桥接key
+        /// </summary>
+        /// <param name="id1"></param>
+        /// <param name="id2"></param>
+        /// <param name="id_result"></param>
+        /// <returns></returns>
+        public static bool ConnectWith(this long id1, long id2, int level, out long id_result)
+        {
+            return KeyMapStorage.Instance.TryCreateBridgeKey(out id_result, id1, id2, level);
         }
     }
 }

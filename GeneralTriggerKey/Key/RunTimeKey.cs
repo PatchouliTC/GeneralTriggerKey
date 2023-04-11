@@ -6,18 +6,11 @@ namespace GeneralTriggerKey.Key
     /// <summary>
     /// 运行时手动增添Key
     /// </summary>
-    internal class RunTimeKey : KeyGroupUnit, IRunTimeKey
+    internal sealed class RunTimeKey : SimpleKeyNode, IRunTimeKey
     {
         public bool IsMultiKey => false;
 
         public string DisplayName { get; private set; }
-
-        public bool HasAlias
-        {
-            get { return !(this.Alias is null || this.Alias.Count == 0); }
-        }
-
-        public HashSet<string> Alias { get; private set; } = new HashSet<string>();
 
         public string Range { get; private set; }
 
@@ -35,7 +28,7 @@ namespace GeneralTriggerKey.Key
 
         public override string ToString()
         {
-            return $"[RunTimeKey]({Id})<{DisplayName}>[UseFor:{Range}]";
+            return $"[RunTimeKey]({Id})<{DisplayName}>-[UseFor:{Range}]";
         }
     }
 }

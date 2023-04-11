@@ -38,6 +38,7 @@ namespace GeneralTriggerKey.Utils
                 {
                     SyntaxKind.BitwiseAndExpression => left & right,
                     SyntaxKind.BitwiseOrExpression => left | right,
+                    SyntaxKind.DivideExpression => left / right,
                     _ => throw new ArgumentException(message: $"Not support {_binaryNode.Kind()} operator")
                 };
             }

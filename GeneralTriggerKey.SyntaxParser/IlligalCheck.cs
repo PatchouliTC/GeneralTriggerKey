@@ -15,7 +15,7 @@ namespace GeneralTriggerKey.SyntaxParser
             SyntaxKind.BitwiseOrExpression,
             SyntaxKind.BitwiseAndExpression,
             //SyntaxKind.AddExpression,
-            //SyntaxKind.DivideExpression,
+            SyntaxKind.DivideExpression,
             //SyntaxKind.LeftShiftExpression,
         };
         public static readonly HashSet<SyntaxKind> SupportConcatExpressionSyntax = new HashSet<SyntaxKind> {

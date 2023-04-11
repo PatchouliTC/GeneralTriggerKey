@@ -7,9 +7,9 @@ namespace GeneralTriggerKey.Key
     /// <summary>
     /// 对应枚举的key[单项key]
     /// </summary>
-    internal class EnumKey : KeyGroupUnit, IEnumKey
+    internal sealed class EnumKey : SimpleKeyNode, IEnumKey
     {
-        public IEnumGroup BelongEnumGroup { get; private set; }
+        public IEnumGroup BelongEnumGroup { get; private set; } = default!;
 
         public long OriginId { get; private set; }
 
@@ -53,5 +53,7 @@ namespace GeneralTriggerKey.Key
         {
             return $"[EnumKey]({Id})<{DisplayName}>-OId:{OriginId}=>Belong:{BelongEnumGroup}";
         }
+
+
     }
 }
