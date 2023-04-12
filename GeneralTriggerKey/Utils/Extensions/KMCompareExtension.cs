@@ -634,6 +634,7 @@ namespace GeneralTriggerKey.Utils.Extensions
             }
             return false;
         }
+
         /// <summary>
         /// 获取桥接key
         /// </summary>

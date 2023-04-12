@@ -555,7 +555,7 @@ namespace GeneralTriggerKey
                     return true;
                 }
                 else
-                    throw new ArgumentException(message: "Not Allow create bridge key with bridge key node");
+                    throw new ArgumentException(message: $"Not Allow create bridge key with non simple key node {current_key},{next_level_key}");
             }
             bridge_key_runtime_id = -1;
             return false;
@@ -585,7 +585,7 @@ namespace GeneralTriggerKey
 
 
 
-            var key_hash = $"L-{_hashids.EncodeLong(register_bridge_key_ids)}";
+            var key_hash = $"L|{_hashids.EncodeLong(register_bridge_key_ids)}";
             if (_created_level_key_cache.TryGetValue(key_hash, out level_key_runtime_id))
                 return true;
 
