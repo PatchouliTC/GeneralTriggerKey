@@ -467,7 +467,7 @@ namespace GeneralTriggerKey
         public bool TryCreateBridgeKey(out long bridge_key_runtime_id, long current, long next, int current_level)
         {
             //0层无效[从1层开始计算]
-            if (current_level == 0)
+            if (current_level <= 0)
             {
                 bridge_key_runtime_id = -1;
                 return false;
@@ -479,9 +479,7 @@ namespace GeneralTriggerKey
                 {
                     var _key_hash = $"B|{_hashids.EncodeLong(current, next)}";
                     if (_created_bridge_key_cache.TryGetValue(_key_hash, out bridge_key_runtime_id))
-                    {
                         return true;
-                    }
 
                     var _new_bridge_node = new BridgeKey(IdCreator.Instance.GetId(), _key_hash, current_level, _nodel, _noder);
 
@@ -559,7 +557,6 @@ namespace GeneralTriggerKey
                 else
                     throw new ArgumentException(message: "Not Allow create bridge key with bridge key node");
             }
-
             bridge_key_runtime_id = -1;
             return false;
         }
@@ -573,6 +570,7 @@ namespace GeneralTriggerKey
         public bool TryRegisterLevelKey(out long level_key_runtime_id, params long[] register_bridge_key_ids)
         {
             level_key_runtime_id = -1;
+            //节点检查,确保所有节点都是bridge节点,同时每个bridge节点之间是连续的
             for (int i = 0; i < register_bridge_key_ids.Length - 1; i++)
                 if (Keys.TryGetValue(register_bridge_key_ids[i], out var key1) && Keys.TryGetValue(register_bridge_key_ids[i + 1], out var key2))
                     if (key1 is IBridgeKey _key1 && key2 is IBridgeKey _key2)
@@ -580,8 +578,7 @@ namespace GeneralTriggerKey
                             throw new InvalidOperationException(message: $"Not support connect diff key link({_key1}-{_key2})");
                         else
                             return false;
-                    else
-                        return false;
+
             var key_hash = $"L-{_hashids.EncodeLong(register_bridge_key_ids)}";
             if (_created_level_key_cache.TryGetValue(key_hash, out level_key_runtime_id))
                 return true;
@@ -618,7 +615,6 @@ namespace GeneralTriggerKey
                 if (node.KeySequence.Length > _new_level_node.KeySequence.Length)
                 {
                     if (_ignore_parents_nodes.Contains(node.Id))
-                        //存在于要求忽略的父节点中,跳过
                         continue;
                     //无论当前节点能否通过,将其父节点全部丢入忽略的parentnodes中
                     _stack_cache.Push(node);
@@ -761,33 +757,34 @@ namespace GeneralTriggerKey
                     }
                 }
 
-                //构建关系树
-                foreach (var parent_node in _parent_nodes)
-                {
-                    Keys.TryGetValue(parent_node, out var _parent);
-                    foreach (var _disconnect_node in _parent.DAGChildKeys.Where(x => _child_nodes.Contains(x.Id)))
-                    {
-                        _disconnect_node.DAGParentKeys.Remove(_parent);
-                        _parent.DAGChildKeys.Remove(_disconnect_node);
-                    }
-                    _parent.DAGChildKeys.Add(_new_level_node);
-                    _new_level_node.DAGParentKeys.Add(_parent);
-                }
-
-                foreach (var child_node in _child_nodes)
-                {
-                    Keys.TryGetValue(child_node, out var _child);
-                    _child.DAGParentKeys.Add(_new_level_node);
-                    _new_level_node.DAGChildKeys.Add(_child);
-                    _new_level_node.CanTriggerNode.UnionWith(_child.CanTriggerNode);
-                }
-
-                Keys.Add(_new_level_node.Id, _new_level_node);
-                level_key_runtime_id = _new_level_node.Id;
-                _created_bridge_key_cache.Add(key_hash, _new_level_node.Id);
-                return true;
             }
-            return false;
+            //构建关系树
+            foreach (var parent_node in _parent_nodes)
+            {
+                Keys.TryGetValue(parent_node, out var _parent);
+                foreach (var _disconnect_node in _parent.DAGChildKeys.Where(x => _child_nodes.Contains(x.Id)))
+                {
+                    _disconnect_node.DAGParentKeys.Remove(_parent);
+                    _parent.DAGChildKeys.Remove(_disconnect_node);
+                }
+                _parent.DAGChildKeys.Add(_new_level_node);
+                _new_level_node.DAGParentKeys.Add(_parent);
+            }
+
+            _new_level_node.NotifyUpperAddNode(_new_level_node.Id);
+
+            foreach (var child_node in _child_nodes)
+            {
+                Keys.TryGetValue(child_node, out var _child);
+                _child.DAGParentKeys.Add(_new_level_node);
+                _new_level_node.DAGChildKeys.Add(_child);
+                _new_level_node.CanTriggerNode.UnionWith(_child.CanTriggerNode);
+            }
+
+            Keys.Add(_new_level_node.Id, _new_level_node);
+            level_key_runtime_id = _new_level_node.Id;
+            _created_bridge_key_cache.Add(key_hash, _new_level_node.Id);
+            return true;
         }
 
         /// <summary>

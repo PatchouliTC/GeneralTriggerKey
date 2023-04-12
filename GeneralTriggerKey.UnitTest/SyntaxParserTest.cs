@@ -41,6 +41,15 @@ namespace GeneralTriggerKey.UnitTest
         }
 
         [TestMethod]
+        public void TestReadStringToSyntaxNodeWithDivide()
+        {
+            string triggercode = "((A&B)/(C&D))/(E&F)";
+            var result = ParseTextToSyntax(triggercode);
+
+            Console.WriteLine(result);
+        }
+
+        [TestMethod]
         public void TestStrToKeyNode()
         {
             string key_string = "(STKey4&STKey3)|(STKey1 & STKey2)";

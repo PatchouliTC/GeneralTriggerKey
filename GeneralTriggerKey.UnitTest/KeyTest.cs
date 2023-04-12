@@ -20,9 +20,9 @@ namespace GeneralTriggerKey.UnitTest
         F = 6,
         G = 7,
         H = 8,
-        M宣言,
-        M选择,
-        M发动,
+        宣言,
+        选择,
+        发动,
     }
 
 
@@ -254,11 +254,33 @@ namespace GeneralTriggerKey.UnitTest
 
             KMStorageWrapper.TryRegisterRunTimeKey(out var _tempid, "OB");
 
-            var effect = Q(MapTestEnum.M宣言) & Q("OB") | Q(MapTestEnum.M选择);
+            var effect = Q(MapTestEnum.宣言) & Q("OB") | Q(MapTestEnum.选择);
 
-            var eventhappened = Q(MapTestEnum.M发动) & Q(MapTestEnum.M宣言) & Q("OB");
+            var eventhappened = Q(MapTestEnum.发动) & Q(MapTestEnum.宣言) & Q("OB");
 
             Assert.IsTrue(eventhappened * effect);
+        }
+
+        [TestMethod]
+        public void TestKeyDivide()
+        {
+            var idA = KMStorageWrapper.Convert(MapTestEnum.A);
+            var idB = KMStorageWrapper.Convert(MapTestEnum.B);
+            var idC = KMStorageWrapper.Convert(MapTestEnum.C);
+            var idD = KMStorageWrapper.Convert(MapTestEnum.D);
+            var idE = KMStorageWrapper.Convert(MapTestEnum.E);
+            var idF = KMStorageWrapper.Convert(MapTestEnum.F);
+            var idG = KMStorageWrapper.Convert(MapTestEnum.G);
+            var idH = KMStorageWrapper.Convert(MapTestEnum.H);
+
+            idA.AndWith(idB, out var idAB);
+            idC.AndWith(idD, out var idDC);
+            idE.AndWith(idF, out var idEF);
+
+            idAB.DivideWith(idDC, out var idL12);
+
+            Console.WriteLine(ShowAllNodes());
+
         }
     }
 }
