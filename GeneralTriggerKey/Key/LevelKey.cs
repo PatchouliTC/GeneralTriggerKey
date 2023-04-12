@@ -25,19 +25,21 @@ namespace GeneralTriggerKey.Key
             var nameBuilder = new StringBuilder();
             for(int i=0;i<KeySequence.Length;i++)
             {
-                KeyMapStorage.Instance.Keys.TryGetValue(KeySequence[i], out var _key);
-                if (_key is IBridgeKey _bkey)
+                KeyMapStorage.Instance.Keys.TryGetValue(KeySequence[i], out var seqKey);
+                if (seqKey is IBridgeKey bridgeKey)
                 {
                     if (i == 0)
                     {
-                        StartLevel = _bkey.JumpLevel;
-                        nameBuilder.Append($"({_bkey.Current.DisplayName})");
+                        StartLevel = bridgeKey.JumpLevel;
+                        if(bridgeKey.Current.IsMultiKey) nameBuilder.Append($"({bridgeKey.Current.DisplayName})");
+                        else nameBuilder.Append($"{bridgeKey.Current.DisplayName}");
                     }
-                    if (i == KeySequence.Length - 1) EndLevel = _bkey.JumpLevel + 1;
+                    if (i == KeySequence.Length - 1) EndLevel = bridgeKey.JumpLevel + 1;
 
-                    nameBuilder.Append($"/({_bkey.Next.DisplayName})");
+                    if (bridgeKey.Next.IsMultiKey) nameBuilder.Append($"/({bridgeKey.Next.DisplayName})");
+                    else nameBuilder.Append($"/{bridgeKey.Next.DisplayName}");
                 }
-                else throw new ArgumentException(message:$"Level key relate sequence exist non bridge key {_key}");
+                else throw new ArgumentException(message:$"Level key relate sequence exist non bridge key {seqKey}");
             }
             DisplayName= nameBuilder.ToString();
         }

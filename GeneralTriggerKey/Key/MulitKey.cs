@@ -161,7 +161,7 @@ namespace GeneralTriggerKey.Key
             var nextRetraction = retraction + 2;
             var prefix = new String(' ', retraction);
 
-            var strBuilder = new StringBuilder($"{prefix}[Multikey]({Id})<{DisplayName}>{{{Name}}}\n");
+            var strBuilder = new StringBuilder($"{prefix}[Multikey]({Id})<{DisplayName}>\n");
 
             foreach (var data in ChildKeys)
             {
