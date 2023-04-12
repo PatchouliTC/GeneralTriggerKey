@@ -1,4 +1,5 @@
-﻿using System;
+﻿using GeneralTriggerKey.Attributes;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -33,5 +34,12 @@ namespace GeneralTriggerKey.KeyMap
         /// 或关系
         /// </summary>
         OR,
+    }
+
+    [MapEnum]
+    public enum StorageKey
+    {
+        [EnumAlia("任意","~")]
+        ANY
     }
 }

@@ -56,10 +56,10 @@ namespace GeneralTriggerKey.UnitTest
             var key=G(key_string);
             Assert.IsTrue(key.Id > 0);
             var key2=G("(STKey4&STKey3)/STKey1");
-            var key3 = G("(STKey4&STKey3)/STKey3");
+            var key3 = G("ANY/STKey3");
             var key4 = G("(STKey4&STKey3)/(STKey3&STKey1)");
             var key5 = G("(STKey4&STKey3)/(STKey3|STKey1)");
-            Console.WriteLine(key4);
+            Console.WriteLine(ToGraphvizCode());
         }
     }
 }

@@ -34,14 +34,18 @@ namespace GeneralTriggerKey
             _logger = GLogger.Instance.GetLogger<KeyMapStorage>();
             //hashids 协同IDCreator的创建key
             _hashIds = new Hashids(IdCreator.Instance.IdTimeSeed.ToString());
-            TryGetOrAddSingleKey(out var _node, "ANY", "GLO");
-            _anyTypeNode = Keys.GetValueOrDefault(_node);
+            //注册恒定的ANY节点
+            AutoInjectEnumsMapping(typeof(KeyMapStorage).Assembly);
+            TryConvert(StorageKey.ANY,out IKey addNode);
+            AnyTypeCode = addNode;
+            AnyTypeCode.CanTriggerNode.Add(addNode.Id);
         }
         #endregion
 
         #region Prop
         internal Dictionary<long, IKey> Keys { get; private set; } = new Dictionary<long, IKey>();
         internal Dictionary<long, IGroup> Groups { get; private set; } = new Dictionary<long, IGroup>();
+        internal IKey AnyTypeCode { get;private set; }
         #endregion
 
         #region Field
@@ -58,13 +62,9 @@ namespace GeneralTriggerKey
             TypeCode.Int32,
             TypeCode.Int64
         };
-
         private readonly Dictionary<string, long> _createdMultiKeyCache = new Dictionary<string, long>();
         private readonly Dictionary<string, long> _createdBridgeKeyCache = new Dictionary<string, long>();
         private readonly Dictionary<string, long> _createdLevelKeyCache = new Dictionary<string, long>();
-
-
-        private readonly IKey _anyTypeNode;
         #endregion
         /// <summary>
         /// 自动发现指定程序集内所有需求映射的枚举表
@@ -144,6 +144,14 @@ namespace GeneralTriggerKey
                             enumMember.Alias.Add(name);
                         }
                     }
+
+                    if (AnyTypeCode != null)
+                    {
+                        //默认挂载ANY节点
+                        enumMember.DAGChildKeys.Add(AnyTypeCode);
+                        enumMember.CanTriggerNode.Add(AnyTypeCode.Id);
+                        AnyTypeCode.DAGParentKeys.Add(enumMember);
+                    }
                 }
             }
         }
@@ -169,13 +177,20 @@ namespace GeneralTriggerKey
                 return false;
             }
 
-            var new_single_key = new RunTimeKey(id: IdCreator.Instance.GetId(), name: callName, range: range);
+            var newRuntimeSingleKey = new RunTimeKey(id: IdCreator.Instance.GetId(), name: callName, range: range);
 
-            nameKeyMap.Add(new_single_key.Name!, new_single_key);
-            nameKeyMap.Add(callName, new_single_key);
-            Keys.Add(new_single_key.Id, new_single_key);
+            //默认挂载ANY节点
+            if(AnyTypeCode != null)
+            {
+                newRuntimeSingleKey.DAGChildKeys.Add(AnyTypeCode);
+                newRuntimeSingleKey.CanTriggerNode.Add(AnyTypeCode.Id);
+                AnyTypeCode.DAGParentKeys.Add(newRuntimeSingleKey);
+            }
+            nameKeyMap.Add(newRuntimeSingleKey.Name!, newRuntimeSingleKey);
+            nameKeyMap.Add(callName, newRuntimeSingleKey);
+            Keys.Add(newRuntimeSingleKey.Id, newRuntimeSingleKey);
 
-            runtimeAddKeyId = new_single_key.Id;
+            runtimeAddKeyId = newRuntimeSingleKey.Id;
             return true;
         }
 
@@ -211,7 +226,7 @@ namespace GeneralTriggerKey
                         if (exist_key is ILevelKey || exist_key is IBridgeKey)
                             return false;
                         //AND关系中,any节点没有实际意义,忽略
-                        if (exist_key.Id == _anyTypeNode.Id)
+                        if (exist_key.Id == AnyTypeCode.Id)
                             continue;
 
                         //针对联合key和单一key不同处理
@@ -249,9 +264,9 @@ namespace GeneralTriggerKey
                         if (exist_key is ILevelKey || exist_key is IBridgeKey)
                             return false;
                         //OR关系中,出现ANY节点,直接返回ANY节点
-                        if (exist_key.Id == _anyTypeNode.Id)
+                        if (exist_key.Id == AnyTypeCode.Id)
                         {
-                            multiKeyRuntimeId = _anyTypeNode.Id;
+                            multiKeyRuntimeId = AnyTypeCode.Id;
                             return true;
                         }
                         //针对联合key和单一key不同处理
@@ -436,6 +451,14 @@ namespace GeneralTriggerKey
                     newMultiKey.DAGParentKeys.Add(keyInst);
                     keyInst.DAGChildKeys.Add(newMultiKey);
                 }
+            }
+
+            //如果是OR关系,并且最终重新关联之后自身子节点为空,需要添加一个ANY节点作为触发
+            if (newMultiKey.KeyRelateType == MapKeyType.OR && newMultiKey.DAGChildKeys.Count == 0)
+            {
+                newMultiKey.DAGChildKeys.Add(AnyTypeCode);
+                newMultiKey.CanTriggerNode.Add(AnyTypeCode.Id);
+                AnyTypeCode.DAGParentKeys.Add(newMultiKey);
             }
 
             //通知该key的DAG父节点添加当前节点ID来更新可触发ID表
@@ -877,7 +900,6 @@ namespace GeneralTriggerKey
             id = key.Id;
             return true;
         }
-
         /// <summary>
         /// 给定枚举类型转换为运行时ID并返回实际key
         /// </summary>

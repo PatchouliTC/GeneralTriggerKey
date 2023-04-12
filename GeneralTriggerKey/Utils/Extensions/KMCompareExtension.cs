@@ -1,5 +1,6 @@
 ﻿using GeneralTriggerKey.Key;
 using GeneralTriggerKey.KeyMap;
+using IdGen;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,6 +19,13 @@ namespace GeneralTriggerKey.Utils.Extensions
         /// <returns></returns>
         public static bool Contains(this long id1, long id2)
         {
+            if (id1 == KeyMapStorage.Instance.AnyTypeCode.Id || id2 == KeyMapStorage.Instance.AnyTypeCode.Id)
+            {
+                if (id1 == id2) return true;
+                else if (id2 == KeyMapStorage.Instance.AnyTypeCode.Id) return true;
+                return false;
+            }
+
             if (KeyMapStorage.Instance.TryGetKey(id1, out IKey value1) && KeyMapStorage.Instance.TryGetKey(id2, out IKey value2))
             {
                 if (value1 is IBridgeKey bkey1 && value2 is IBridgeKey bkey2)
@@ -65,6 +73,13 @@ namespace GeneralTriggerKey.Utils.Extensions
         /// <returns></returns>
         public static bool Overlaps(this long id1, long id2)
         {
+            if (id1 == KeyMapStorage.Instance.AnyTypeCode.Id || id2 == KeyMapStorage.Instance.AnyTypeCode.Id)
+            {
+                if (id1 == id2) return true;
+                else if (id2 == KeyMapStorage.Instance.AnyTypeCode.Id) return true;
+                return false;
+            }
+
             if (KeyMapStorage.Instance.TryGetKey(id1, out IKey value1) && KeyMapStorage.Instance.TryGetKey(id2, out IKey value2))
             {
                 if (value1 is IBridgeKey bkey1 && value2 is IBridgeKey bkey2) return id1 == id2;
@@ -86,14 +101,26 @@ namespace GeneralTriggerKey.Utils.Extensions
         /// <summary>
         /// 当前键能否触发后者条件
         /// </summary>
-        /// <param name="current_id"></param>
-        /// <param name="check_id"></param>
+        /// <param name="currentId"></param>
+        /// <param name="requireCheckId"></param>
         /// <returns></returns>
-        public static bool CanTrigger(this long current_id, long check_id, long mustContainKeyId = -1)
+        public static bool CanTrigger(this long currentId, long requireCheckId, long mustContainKeyId = -1)
         {
-            if (KeyMapStorage.Instance.TryGetKey(current_id, out IKey value1) && KeyMapStorage.Instance.TryGetKey(check_id, out IKey value2))
+            if (KeyMapStorage.Instance.TryGetKey(currentId, out IKey value1) && KeyMapStorage.Instance.TryGetKey(requireCheckId, out IKey value2))
             {
                 KeyMapStorage.Instance.TryGetKey(mustContainKeyId, out IKey mustContainKeyIdInst);
+                if (mustContainKeyIdInst != null && mustContainKeyIdInst.Id == KeyMapStorage.Instance.AnyTypeCode.Id) mustContainKeyIdInst = null!;
+
+                if (currentId == KeyMapStorage.Instance.AnyTypeCode.Id || requireCheckId == KeyMapStorage.Instance.AnyTypeCode.Id)
+                {
+                    if (mustContainKeyIdInst is null)
+                    {
+                        if (currentId == KeyMapStorage.Instance.AnyTypeCode.Id) return false;
+                        if (requireCheckId == KeyMapStorage.Instance.AnyTypeCode.Id) return true;
+                    }
+                    else return false;
+                }
+
 
                 if (value1 is IBridgeKey bkey1 && value2 is IBridgeKey bkey2) return bkey1.CanTriggerNode.Contains(bkey2.Id);
                 else if (value1 is ILevelKey lkey1 && value2 is ILevelKey lkey2) return lkey1.CanTriggerNode.Contains(lkey2.Id);
@@ -156,8 +183,12 @@ namespace GeneralTriggerKey.Utils.Extensions
         public static bool SymmetricExceptWith(this long id1, long id2, out long resultId)
         {
             resultId = -1;
+
+            if (id1 == KeyMapStorage.Instance.AnyTypeCode.Id || id2 == KeyMapStorage.Instance.AnyTypeCode.Id) return false;
+
             if (KeyMapStorage.Instance.TryGetKey(id1, out IKey value1) && KeyMapStorage.Instance.TryGetKey(id2, out IKey value2))
             {
+
                 if (value1 is IBridgeKey _ || value2 is IBridgeKey _) return false;
                 else if (value1 is ILevelKey _ || value2 is ILevelKey _) return false;
                 else if (value1.IsMultiKey && value2.IsMultiKey && value1.KeyRelateType == value2.KeyRelateType)
@@ -190,6 +221,12 @@ namespace GeneralTriggerKey.Utils.Extensions
         /// <returns></returns>
         public static bool IntersectWith(this long id1, long id2, out long idResult)
         {
+            if (id1 == KeyMapStorage.Instance.AnyTypeCode.Id || id2 == KeyMapStorage.Instance.AnyTypeCode.Id)
+            {
+                idResult = KeyMapStorage.Instance.AnyTypeCode.Id;
+                return true;
+            }
+
             idResult = -1;
             if (KeyMapStorage.Instance.TryGetKey(id1, out IKey value1) && KeyMapStorage.Instance.TryGetKey(id2, out IKey value2))
             {
@@ -235,6 +272,12 @@ namespace GeneralTriggerKey.Utils.Extensions
         /// <returns></returns>
         public static bool OrWith(this long id1, long id2, out long resultId)
         {
+            if (id1 == KeyMapStorage.Instance.AnyTypeCode.Id || id2 == KeyMapStorage.Instance.AnyTypeCode.Id)
+            {
+                resultId = KeyMapStorage.Instance.AnyTypeCode.Id;
+                return true;
+            }
+
             resultId = -1;
             if (KeyMapStorage.Instance.TryGetKey(id1, out IKey key1) && KeyMapStorage.Instance.TryGetKey(id2, out IKey key2))
             {
@@ -251,6 +294,12 @@ namespace GeneralTriggerKey.Utils.Extensions
         /// <returns></returns>
         public static bool AndWith(this long id1, long id2, out long resultId)
         {
+            if (id1 == KeyMapStorage.Instance.AnyTypeCode.Id || id2 == KeyMapStorage.Instance.AnyTypeCode.Id)
+            {
+                resultId = KeyMapStorage.Instance.AnyTypeCode.Id;
+                return true;
+            }
+
             resultId = -1;
             if (KeyMapStorage.Instance.TryGetKey(id1, out IKey value1) && KeyMapStorage.Instance.TryGetKey(id2, out IKey value2))
             {
@@ -340,6 +389,11 @@ namespace GeneralTriggerKey.Utils.Extensions
         /// <returns></returns>
         public static bool AndWithIfExist(this long id1, long id2, out long resultId)
         {
+            if (id1 == KeyMapStorage.Instance.AnyTypeCode.Id || id2 == KeyMapStorage.Instance.AnyTypeCode.Id)
+            {
+                resultId = KeyMapStorage.Instance.AnyTypeCode.Id;
+                return true;
+            }
             resultId = -1;
             if (KeyMapStorage.Instance.TryGetKey(id1, out IKey value1) && KeyMapStorage.Instance.TryGetKey(id2, out IKey value2))
             {
