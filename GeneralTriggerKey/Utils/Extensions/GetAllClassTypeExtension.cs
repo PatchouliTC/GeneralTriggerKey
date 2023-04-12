@@ -31,7 +31,7 @@ namespace GeneralTriggerKey.Utils.Extensions
         public static List<ClassWithAttributes<T>>? GetClassWithAttributesType<T>(this Assembly assembly)
             where T : Attribute
         {
-            List<ClassWithAttributes<T>> _list = new List<ClassWithAttributes<T>>();
+            List<ClassWithAttributes<T>> resultList = new List<ClassWithAttributes<T>>();
 
             foreach (var type in assembly.GetTypes())
             {
@@ -39,21 +39,21 @@ namespace GeneralTriggerKey.Utils.Extensions
                 if (obj.Length == 0)
                     continue;
 
-                var _attribute_list = new List<T>();
-                foreach (var _attribute in obj)
+                var attributeList = new List<T>();
+                foreach (var attribute in obj)
                 {
-                    if (_attribute is T)
-                        _attribute_list.Add((T)_attribute);
+                    if (attribute is T)
+                        attributeList.Add((T)attribute);
                 }
 
-                _list.Add(new ClassWithAttributes<T>
+                resultList.Add(new ClassWithAttributes<T>
                 {
-                    Attribute = _attribute_list,
+                    Attribute = attributeList,
                     ClassInfo = type
                 });
 
             }
-            return _list.Count > 0 ? _list : null;
+            return resultList.Count > 0 ? resultList : null;
         }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace GeneralTriggerKey.Utils.Extensions
         internal static List<ClassWithAttribute<T>>? GetClassWithAttributeType<T>(this Assembly assembly)
             where T : Attribute
         {
-            List<ClassWithAttribute<T>> _list = new List<ClassWithAttribute<T>>();
+            List<ClassWithAttribute<T>> resultList = new List<ClassWithAttribute<T>>();
 
             foreach (var type in assembly.GetTypes())
             {
@@ -73,14 +73,14 @@ namespace GeneralTriggerKey.Utils.Extensions
                 if (obj.Length == 0)
                     continue;
 
-                _list.Add(new ClassWithAttribute<T>
+                resultList.Add(new ClassWithAttribute<T>
                 {
                     Attribute = (T)obj[0],
                     ClassInfo = type
                 });
 
             }
-            return _list.Count > 0 ? _list : null;
+            return resultList.Count > 0 ? resultList : null;
         }
     }
 }

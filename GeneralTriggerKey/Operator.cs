@@ -34,9 +34,8 @@ namespace GeneralTriggerKey
             var _id = KMStorageWrapper.GetOrAddSingleKey(callname, group, force_add);
             if (_id > 0)
             {
-                KMStorageWrapper.TryGetKey(_id, out IKey key);
-                var _is_multi_key = key as IMultiKey;
-                return new GeneralKey(key.Id, key.IsMultiKey, _is_multi_key is null ? MapKeyType.None : _is_multi_key.KeyRelateType);
+                KeyMapStorage.Instance.TryGetKey(_id, out IKey key);
+                return new GeneralKey(key.Id, key.IsMultiKey, key.KeyRelateType);
             }
             return default;
         }
@@ -49,10 +48,9 @@ namespace GeneralTriggerKey
         public static GeneralKey Q(string name)
         {
 
-            if (KMStorageWrapper.TryConvert(name, out IKey key))
+            if (KeyMapStorage.Instance.TryConvert(name, out IKey key))
             {
-                var _is_multi_key = key as IMultiKey;
-                return new GeneralKey(key.Id, key.IsMultiKey, _is_multi_key is null ? MapKeyType.None : _is_multi_key.KeyRelateType);
+                return new GeneralKey(key.Id, key.IsMultiKey, key.KeyRelateType);
             }
             return default;
         }
@@ -66,10 +64,9 @@ namespace GeneralTriggerKey
         public static GeneralKey Q<T>(T enum_key)
             where T : struct, Enum
         {
-            if (KMStorageWrapper.TryConvert(enum_key, out IKey key))
+            if (KeyMapStorage.Instance.TryConvert(enum_key, out IKey key))
             {
-                var _is_multi_key = key as IMultiKey;
-                return new GeneralKey(key.Id, key.IsMultiKey, _is_multi_key is null ? MapKeyType.None : _is_multi_key.KeyRelateType);
+                return new GeneralKey(key.Id, key.IsMultiKey, key.KeyRelateType);
             }
             return default;
         }

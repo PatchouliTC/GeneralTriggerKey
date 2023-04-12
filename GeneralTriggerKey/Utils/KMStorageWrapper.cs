@@ -1,4 +1,5 @@
 ﻿using GeneralTriggerKey.KeyMap;
+using IdGen;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -46,29 +47,7 @@ namespace GeneralTriggerKey.Utils
             }
 
         }
-        /// <summary>
-        /// 给定枚举类型转换为运行时ID
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="value"></param>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        public static bool TryConvert<T>(T value, out long id)
-            where T : struct, Enum
-        {
-            return KeyMapStorage.Instance.TryConvert(value, out id);
-        }
-        /// <summary>
-        /// 给定枚举类型转换为运行时ID并返回实际key
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static bool TryConvert<T>(T value, out IKey key)
-            where T : struct, Enum
-        {
-            return KeyMapStorage.Instance.TryConvert(value, out key);
-        }
+
         /// <summary>
         /// 给定项名称转换为运行时ID
         /// </summary>
@@ -88,53 +67,19 @@ namespace GeneralTriggerKey.Utils
                 return KeyMapStorage.Instance.Convert(name);
             }
         }
-        /// <summary>
-        /// 给定项名称转换为运行时ID
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        public static bool TryConvert(string name, out long id)
-        {
-            return KeyMapStorage.Instance.TryConvert(name, out id);
-        }
-        /// <summary>
-        /// 给定项名称转换为运行时ID并返回实际key
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        public static bool TryConvert(string name, out IKey key)
-        {
-            return KeyMapStorage.Instance.TryConvert(name, out key);
-        }
 
-        public static bool TryRegisterRunTimeKey(out long runtime_key_id, string callName, string range = "GLOBAL")
+        public static bool TryRegisterRunTimeKey(out long runtime_key_id, string callName, string range = "GLO")
         {
             return KeyMapStorage.Instance.TryGetOrAddSingleKey(out runtime_key_id, callName, range);
         }
-        public static bool TryRegisterMultiKey(out long multi_key_runtime_id, MapKeyType keyType = default, params long[] register_key_ids)
+        public static bool TryRegisterMultiKey(out long multi_key_runtime_id, MapKeyType keyType, params long[] register_key_ids)
         {
             return KeyMapStorage.Instance.TryRegisterMultiKey(out multi_key_runtime_id, keyType, register_key_ids, false);
         }
 
-        public static bool TryRegisterMultiKeyIfExist(out long multi_key_runtime_id, MapKeyType keyType = default, params long[] register_key_ids)
+        public static bool TryRegisterMultiKeyIfExist(out long multi_key_runtime_id, MapKeyType keyType, params long[] register_key_ids)
         {
             return KeyMapStorage.Instance.TryRegisterMultiKey(out multi_key_runtime_id, keyType, register_key_ids, true);
-        }
-
-        public static bool TryGetKey<T>(long id, out T value)
-            where T : IKey
-        {
-            if (KeyMapStorage.Instance.Keys.TryGetValue(id, out var key))
-            {
-                if (key is T)
-                {
-                    value = (T)key;
-                    return true;
-                }
-            }
-            value = default!;
-            return false;
         }
     }
 }

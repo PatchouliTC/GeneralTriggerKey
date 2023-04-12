@@ -15,7 +15,7 @@ namespace GeneralTriggerKey.Key
         public string Range { get; private set; }
 
         public RunTimeKey(long id, string name, string range)
-            : base(id, MapKeyType.None, $"R.{range}-{name}")
+            : base(id, MapKeyType.NONE, $"R.{range}-{name}")
         {
             Range = range;
             DisplayName = name;

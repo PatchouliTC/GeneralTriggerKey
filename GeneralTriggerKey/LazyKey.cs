@@ -41,13 +41,13 @@ namespace GeneralTriggerKey
 
         public static LazyKey operator &(LazyKey left, LazyKey right)
         {
-            if (!(left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None || left.KeyType == MapKeyType.OR) ||
-                !(right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None || right.KeyType == MapKeyType.OR)
+            if (!(left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || left.KeyType == MapKeyType.OR) ||
+                !(right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || right.KeyType == MapKeyType.OR)
                 )
                 throw new ArgumentException(message: "Not Support or/and with non or/and");
 
             //and & and/single
-            if ((left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None) && (right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None))
+            if ((left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE) && (right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE))
             {
                 List<long> _temp = new List<long>();
                 _temp.AddRange(left.CacheKeyIds);
@@ -77,8 +77,8 @@ namespace GeneralTriggerKey
 
         public static LazyKey operator |(LazyKey left, LazyKey right)
         {
-            if (!(left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None || left.KeyType == MapKeyType.OR) ||
-                !(right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None || right.KeyType == MapKeyType.OR)
+            if (!(left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || left.KeyType == MapKeyType.OR) ||
+                !(right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || right.KeyType == MapKeyType.OR)
             )
                 throw new ArgumentException(message: "Not Support or/and with non or/and");
 
@@ -89,7 +89,7 @@ namespace GeneralTriggerKey
                 _temp.AddRange(right.CacheKeyIds);
                 return new LazyKey(MapKeyType.OR, _temp);
             }
-            else if ((left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None) && (right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None))
+            else if ((left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE) && (right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE))
             {
                 var key1 = left.Compile();
                 var key2 = right.Compile();
@@ -122,7 +122,7 @@ namespace GeneralTriggerKey
 
             else if (key.CacheKeyIds.Count == 1)
             {
-                if (KMStorageWrapper.TryGetKey(key.CacheKeyIds[0], out IKey _key))
+                if (KeyMapStorage.Instance.TryGetKey(key.CacheKeyIds[0], out IKey _key))
                 {
                     return new GeneralKey(_key.Id, _key.IsMultiKey, _key.KeyRelateType);
                 }
@@ -133,7 +133,7 @@ namespace GeneralTriggerKey
                 {
                     if (KMStorageWrapper.TryRegisterMultiKey(out var multi_key_runtime_id, keyType: key.KeyType, key.CacheKeyIds.ToArray()))
                     {
-                        KMStorageWrapper.TryGetKey(multi_key_runtime_id, out IKey _key);
+                        KeyMapStorage.Instance.TryGetKey(multi_key_runtime_id, out IKey _key);
                         return new GeneralKey(_key.Id, _key.IsMultiKey, _key.KeyRelateType);
                     }
                 }
@@ -144,13 +144,13 @@ namespace GeneralTriggerKey
                     var _other_relate = new List<long>();
                     foreach (var _key in key.CacheKeyIds)
                     {
-                        if (KMStorageWrapper.TryGetKey(_key, out IKey _key_inst))
+                        if (KeyMapStorage.Instance.TryGetKey(_key, out IKey _key_inst))
                         {
                             if (_key_inst is IMultiKey _mkey && _mkey.KeyRelateType == MapKeyType.OR)
                             {
                                 _or_relate.Add(_mkey);
                             }
-                            else if (_key_inst.KeyRelateType != MapKeyType.LEVEL || _key_inst.KeyRelateType != MapKeyType.Bridge)
+                            else if (_key_inst.KeyRelateType != MapKeyType.LEVEL || _key_inst.KeyRelateType != MapKeyType.BRIDGE)
                             {
                                 _other_relate.Add(_key);
                             }
@@ -195,7 +195,7 @@ namespace GeneralTriggerKey
                         }
                         if (KMStorageWrapper.TryRegisterMultiKey(out var multi_key_runtime_id, keyType: MapKeyType.OR, _filter_set.ToArray()))
                         {
-                            KMStorageWrapper.TryGetKey(multi_key_runtime_id, out IKey _key);
+                            KeyMapStorage.Instance.TryGetKey(multi_key_runtime_id, out IKey _key);
                             return new GeneralKey(_key.Id, _key.IsMultiKey, _key.KeyRelateType);
                         }
                     }
@@ -203,21 +203,21 @@ namespace GeneralTriggerKey
                     {
                         if (KMStorageWrapper.TryRegisterMultiKey(out var multi_key_runtime_id, keyType: MapKeyType.OR, _other_relate.ToArray()))
                         {
-                            KMStorageWrapper.TryGetKey(multi_key_runtime_id, out IKey _key);
+                            KeyMapStorage.Instance.TryGetKey(multi_key_runtime_id, out IKey _key);
                             return new GeneralKey(_key.Id, _key.IsMultiKey, _key.KeyRelateType);
                         }
                     }
 
                 }
-                else if (key.KeyType == MapKeyType.Bridge)
+                else if (key.KeyType == MapKeyType.BRIDGE)
                 {
                     if (key.CacheKeyIds.Count > 2)
                         throw new ArgumentException(message: "Not Allow create bridge key with more than 2 simple keys");
-                    if (KMStorageWrapper.TryGetKey(key.CacheKeyIds[0], out ISimpleNode _skey1) && KMStorageWrapper.TryGetKey(key.CacheKeyIds[1], out ISimpleNode _skey2))
+                    if (KeyMapStorage.Instance.TryGetKey(key.CacheKeyIds[0], out ISimpleNode _skey1) && KeyMapStorage.Instance.TryGetKey(key.CacheKeyIds[1], out ISimpleNode _skey2))
                         if (key.Depth > 0)
                             if (KeyMapStorage.Instance.TryCreateBridgeKey(out var _bkey, _skey1.Id, _skey2.Id, key.Depth))
                             {
-                                KMStorageWrapper.TryGetKey(_bkey, out IKey _key);
+                                KeyMapStorage.Instance.TryGetKey(_bkey, out IKey _key);
                                 return new GeneralKey(_key.Id, _key.IsMultiKey, _key.KeyRelateType);
                             }
                 }
@@ -226,7 +226,7 @@ namespace GeneralTriggerKey
                     var _cache = new List<long>();
                     foreach (var _lbid in key.CacheKeyIds)
                     {
-                        if (KMStorageWrapper.TryGetKey(key.CacheKeyIds[0], out IKey _skey1))
+                        if (KeyMapStorage.Instance.TryGetKey(key.CacheKeyIds[0], out IKey _skey1))
                         {
                             if (_skey1 is ILevelKey _lkey)
                             {
@@ -236,7 +236,7 @@ namespace GeneralTriggerKey
                             {
                                 if (_cache.Count > 0)
                                 {
-                                    if (KMStorageWrapper.TryGetKey(_cache.LastOrDefault(), out IKey _last_bridge_key))
+                                    if (KeyMapStorage.Instance.TryGetKey(_cache.LastOrDefault(), out IKey _last_bridge_key))
                                     {
                                         var _temp_b_key = _last_bridge_key as IBridgeKey;
                                         if (_temp_b_key!.JumpLevel != _bbkey.JumpLevel - 1 || _temp_b_key!.Next.Id != _bbkey.Current.Id)
@@ -258,7 +258,7 @@ namespace GeneralTriggerKey
                     }
                     if (KeyMapStorage.Instance.TryRegisterLevelKey(out var _bkey, _cache.ToArray()))
                     {
-                        KMStorageWrapper.TryGetKey(_bkey, out IKey _key);
+                        KeyMapStorage.Instance.TryGetKey(_bkey, out IKey _key);
                         return new GeneralKey(_key.Id, _key.IsMultiKey, _key.KeyRelateType);
                     }
                 }

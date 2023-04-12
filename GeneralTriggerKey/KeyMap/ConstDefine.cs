@@ -12,11 +12,11 @@ namespace GeneralTriggerKey.KeyMap
         /// <summary>
         /// For key,default such as single key
         /// </summary>
-        None,
+        NONE,
         /// <summary>
         /// 组
         /// </summary>
-        Group,
+        GROUP,
         /// <summary>
         /// 层级键
         /// </summary>
@@ -24,7 +24,7 @@ namespace GeneralTriggerKey.KeyMap
         /// <summary>
         /// 桥接键
         /// </summary>
-        Bridge,
+        BRIDGE,
         /// <summary>
         /// 与关系
         /// </summary>

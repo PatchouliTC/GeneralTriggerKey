@@ -36,7 +36,7 @@ namespace GeneralTriggerKey.Key
         /// 单key初始化
         /// </summary>
         public EnumKey(long id, long originId, IEnumGroup belongGroup, string name)
-            : base(id, MapKeyType.None, name)
+            : base(id, MapKeyType.NONE, name)
         {
             OriginId = originId;
             BelongEnumGroup = belongGroup;

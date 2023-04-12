@@ -17,12 +17,12 @@ namespace GeneralTriggerKey.Key
         public bool IsMultiKey => true;
         public string DisplayName {get; private set;}
 
-        public LevelKey(long id, string name,long[] key_list)
+        public LevelKey(long id, string name,long[] bridgeKeySequence)
             : base(id, MapKeyType.LEVEL, name)
         {
-            KeySequence = key_list;
+            KeySequence = bridgeKeySequence;
 
-            var _singlenamebuilder = new StringBuilder();
+            var nameBuilder = new StringBuilder();
             for(int i=0;i<KeySequence.Length;i++)
             {
                 KeyMapStorage.Instance.Keys.TryGetValue(KeySequence[i], out var _key);
@@ -31,15 +31,15 @@ namespace GeneralTriggerKey.Key
                     if (i == 0)
                     {
                         StartLevel = _bkey.JumpLevel;
-                        _singlenamebuilder.Append($"({_bkey.Current.DisplayName})");
+                        nameBuilder.Append($"({_bkey.Current.DisplayName})");
                     }
                     if (i == KeySequence.Length - 1) EndLevel = _bkey.JumpLevel + 1;
 
-                    _singlenamebuilder.Append($"/({_bkey.Next.DisplayName})");
+                    nameBuilder.Append($"/({_bkey.Next.DisplayName})");
                 }
                 else throw new ArgumentException(message:$"Level key relate sequence exist non bridge key {_key}");
             }
-            DisplayName= _singlenamebuilder.ToString();
+            DisplayName= nameBuilder.ToString();
         }
 
         public override string ToGraphvizNodeString()
@@ -54,20 +54,20 @@ namespace GeneralTriggerKey.Key
 
         public string ToString(int retraction = 0)
         {
-            var _next_retraction = retraction + 2;
-            var _prefix = new String(' ', retraction);
+            var nextRetraction = retraction + 2;
+            var prefix = new String(' ', retraction);
 
-            var _str_builder = new StringBuilder($"{_prefix}[LevelKey]({Id})<{DisplayName}>|{StartLevel}>{EndLevel}|\n");
+            var strBuilder = new StringBuilder($"{prefix}[LevelKey]({Id})<{DisplayName}>|{StartLevel}>{EndLevel}|\n");
 
             foreach (var data in DAGChildKeys)
             {
                 if (data is LevelKey _bkey)
-                    _str_builder.Append($"{_bkey.ToString(_next_retraction)}\n");
+                    strBuilder.Append($"{_bkey.ToString(nextRetraction)}\n");
                 else
-                    _str_builder.Append($"{_prefix}  {data}\n");
+                    strBuilder.Append($"{prefix}  {data}\n");
             }
-            _str_builder.Length -= 1;
-            return _str_builder.ToString();
+            strBuilder.Length -= 1;
+            return strBuilder.ToString();
         }
     }
 }

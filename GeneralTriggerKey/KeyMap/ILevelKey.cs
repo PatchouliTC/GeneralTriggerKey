@@ -10,6 +10,9 @@ namespace GeneralTriggerKey.KeyMap
         /// 当前Level深度
         /// </summary>
         int EndLevel { get; }
+        /// <summary>
+        /// 起始深度
+        /// </summary>
         int StartLevel { get; }
         /// <summary>
         /// 当前KEY对应序列

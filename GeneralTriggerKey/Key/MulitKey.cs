@@ -21,100 +21,94 @@ namespace GeneralTriggerKey.Key
         public bool HasOtherMultiKey => ChildKeys.Values.Any(x => x.IsMultiKey);
 
         #region Search Cache
-        private HashSet<long> _contain_search_cache = new HashSet<long>();
-        private HashSet<long> _checked_contain_keys = new HashSet<long>();
+        private HashSet<long> _containSearchCache = new HashSet<long>();
+        private HashSet<long> _checkedContainKeys = new HashSet<long>();
 
-        private HashSet<long> _supersetof_search_cache = new HashSet<long>();
-        private HashSet<long> _checked_supersetof_keys = new HashSet<long>();
+        private HashSet<long> _supersetofSearchCache = new HashSet<long>();
+        private HashSet<long> _checkedSupersetofKeys = new HashSet<long>();
 
-        private HashSet<long> _overlaps_search_cache = new HashSet<long>();
-        private HashSet<long> _checked_overlaps_keys = new HashSet<long>();
-
-        //private HashSet<long> _triggerself_search_cache = new HashSet<long>();
-        //private HashSet<long> _checked_triggerself_keys = new HashSet<long>();
+        private HashSet<long> _overlapsSearchCache = new HashSet<long>();
+        private HashSet<long> _checkedOverlapsKeys = new HashSet<long>();
         #endregion
-        public MulitKey(long id, MapKeyType keyType, HashSet<long> relatesinglekeys, string name, IEnumerable<long> _relate_keys, HashSet<string>? alias = null)
+        public MulitKey(long id, MapKeyType keyType, HashSet<long> relatesinglekeys, string name, IEnumerable<long> relateKeys, HashSet<string>? alias = null)
             : base(id, keyType, name)
         {
             ChildKeys = new Dictionary<long, IKey>();
             ParentKeys = new List<IMultiKey>();
             RelateSingleKeys = relatesinglekeys ?? new HashSet<long>();
 
-            var _singlenamebuilder = new StringBuilder();
+            var nameBuilder = new StringBuilder();
             if (KeyRelateType == MapKeyType.AND)
             {
-                foreach (var _id in _relate_keys)
+                foreach (var _id in relateKeys)
                 {
                     KeyMapStorage.Instance.Keys.TryGetValue(_id, out var key);
-                    _singlenamebuilder.Append($"{key.DisplayName}&");
+                    nameBuilder.Append($"{key.DisplayName}&");
                 }
             }
             else if (KeyRelateType == MapKeyType.OR)
             {
                 //Or关系,可能存在multikey
-                foreach (var _id in _relate_keys)
+                foreach (var relateId in relateKeys)
                 {
-                    KeyMapStorage.Instance.Keys.TryGetValue(_id, out var _key);
-                    if (_key.IsMultiKey)
+                    KeyMapStorage.Instance.Keys.TryGetValue(relateId, out var relateKeyInst);
+                    if (relateKeyInst.IsMultiKey)
                     {
-                        _singlenamebuilder.Append("(");
-                        foreach (var __id in (_key as IMultiKey)!.MultiKeys)
+                        nameBuilder.Append("(");
+                        foreach (var __id in (relateKeyInst as IMultiKey)!.MultiKeys)
                         {
                             KeyMapStorage.Instance.Keys.TryGetValue(__id, out var __key);
-                            _singlenamebuilder.Append($"{__key.DisplayName}&");
+                            nameBuilder.Append($"{__key.DisplayName}&");
                         }
-                        _singlenamebuilder.Remove(_singlenamebuilder.Length - 1, 1);
-                        _singlenamebuilder.Append(")|");
+                        nameBuilder.Remove(nameBuilder.Length - 1, 1);
+                        nameBuilder.Append(")|");
                     }
                     else
                     {
-                        _singlenamebuilder.Append($"{_key.DisplayName}|");
+                        nameBuilder.Append($"{relateKeyInst.DisplayName}|");
                     }
                 }
             }
-            _singlenamebuilder.Length -= 1;
-            DisplayName = _singlenamebuilder.ToString();
-            MultiKeys = _relate_keys.ToArray();
+            nameBuilder.Length -= 1;
+            DisplayName = nameBuilder.ToString();
+            MultiKeys = relateKeys.ToArray();
         }
 
         public bool Contains(long id)
         {
-            if (_contain_search_cache.Contains(id))
+            if (_containSearchCache.Contains(id))
                 return true;
-            if (_checked_contain_keys.Contains(id))
+            if (_checkedContainKeys.Contains(id))
                 return false;
-            _checked_contain_keys.Add(id);
+            _checkedContainKeys.Add(id);
             //检查子集和全展开后的单例键是否存在
             if (ChildKeys.ContainsKey(id) || RelateSingleKeys.Contains(id))
             {
-                _contain_search_cache.Add(id);
+                _containSearchCache.Add(id);
                 return true;
             }
 
             //不存在则检查所有复合键类型的子集
-            foreach (var child in ChildKeys.Values.Where(x => x.IsMultiKey))
+            foreach (var child in ChildKeys.Values.OfType<IMultiKey>())
             {
-                var _temp = child as IMultiKey;
                 //递归遍历深层级
-                if (_temp!.Contains(id))
+                if (child.Contains(id))
                 {
-                    _contain_search_cache.Add(id);
+                    _containSearchCache.Add(id);
                     return true;
                 }
-
             }
             //如果当前项是OR,需要将singlekey中是AND关系的联合键取出并进行检查包含性
             if (KeyRelateType == MapKeyType.OR)
             {
-                foreach (var _single_key in RelateSingleKeys)
+                foreach (var singleKey in RelateSingleKeys)
                 {
-                    KeyMapStorage.Instance.Keys.TryGetValue(_single_key, out var _key);
-                    if (_key.IsMultiKey)
+                    KeyMapStorage.Instance.Keys.TryGetValue(singleKey, out var singleKeyInst);
+                    if (singleKeyInst is IMultiKey factMultiKeyInst)
                     {
-                        var _temp = _key as IMultiKey;
-                        if (_temp!.Contains(id))
+                        if (factMultiKeyInst.Contains(id))
                         {
-                            _contain_search_cache.Add(id);
+                            _containSearchCache.Add(id);
                             return true;
                         }
                     }
@@ -124,14 +118,14 @@ namespace GeneralTriggerKey.Key
         }
         public bool IsRSupersetOf(IMultiKey key)
         {
-            if (_supersetof_search_cache.Contains(key.Id))
+            if (_supersetofSearchCache.Contains(key.Id))
                 return true;
-            if (_checked_supersetof_keys.Contains(key.Id))
+            if (_checkedSupersetofKeys.Contains(key.Id))
                 return false;
-            _checked_supersetof_keys.Add(key.Id);
+            _checkedSupersetofKeys.Add(key.Id);
             if (RelateSingleKeys.IsSupersetOf(key.RelateSingleKeys))
             {
-                _supersetof_search_cache.Add(key.Id);
+                _supersetofSearchCache.Add(key.Id);
                 return true;
             }
             return false;
@@ -139,14 +133,14 @@ namespace GeneralTriggerKey.Key
 
         public bool ROverlaps(IMultiKey key)
         {
-            if (_overlaps_search_cache.Contains(key.Id))
+            if (_overlapsSearchCache.Contains(key.Id))
                 return true;
-            if (_checked_overlaps_keys.Contains(key.Id))
+            if (_checkedOverlapsKeys.Contains(key.Id))
                 return false;
-            _checked_overlaps_keys.Add(key.Id);
+            _checkedOverlapsKeys.Add(key.Id);
             if (RelateSingleKeys.Overlaps(key.RelateSingleKeys))
             {
-                _overlaps_search_cache.Add(key.Id);
+                _overlapsSearchCache.Add(key.Id);
                 return true;
             }
             return false;
@@ -164,20 +158,20 @@ namespace GeneralTriggerKey.Key
 
         public string ToString(int retraction = 0)
         {
-            var _next_retraction = retraction + 2;
-            var _prefix = new String(' ', retraction);
+            var nextRetraction = retraction + 2;
+            var prefix = new String(' ', retraction);
 
-            var _str_builder = new StringBuilder($"{_prefix}[Multikey]({Id})<{DisplayName}>{{{Name}}}\n");
+            var strBuilder = new StringBuilder($"{prefix}[Multikey]({Id})<{DisplayName}>{{{Name}}}\n");
 
             foreach (var data in ChildKeys)
             {
                 if (data.Value is MulitKey)
-                    _str_builder.Append($"{(data.Value as MulitKey)!.ToString(_next_retraction)}\n");
+                    strBuilder.Append($"{(data.Value as MulitKey)!.ToString(nextRetraction)}\n");
                 else
-                    _str_builder.Append($"{_prefix}  {data.Value}\n");
+                    strBuilder.Append($"{prefix}  {data.Value}\n");
             }
-            _str_builder.Length -= 1;
-            return _str_builder.ToString();
+            strBuilder.Length -= 1;
+            return strBuilder.ToString();
         }
     }
 }

@@ -22,7 +22,7 @@ namespace GeneralTriggerKey.Key
         public string DisplayName => $"{Current.DisplayName}/{Next.DisplayName}";
 
         public BridgeKey(long id, string name, int level, ISimpleNode left, ISimpleNode right)
-            : base(id, MapKeyType.Bridge, name)
+            : base(id, MapKeyType.BRIDGE, name)
         {
             JumpLevel = level;
             Current = left;
@@ -41,20 +41,20 @@ namespace GeneralTriggerKey.Key
 
         public string ToString(int retraction = 0)
         {
-            var _next_retraction = retraction + 2;
-            var _prefix = new String(' ', retraction);
+            var nextRetraction = retraction + 2;
+            var prefix = new String(' ', retraction);
 
-            var _str_builder = new StringBuilder($"{_prefix}[BridgeKey]({Id})<{DisplayName}>|{JumpLevel}/{JumpLevel + 1}|\n");
+            var strBuilder = new StringBuilder($"{prefix}[BridgeKey]({Id})<{DisplayName}>|{JumpLevel}/{JumpLevel + 1}|\n");
 
             foreach (var data in DAGChildKeys)
             {
                 if (data is BridgeKey _bkey)
-                    _str_builder.Append($"{_bkey.ToString(_next_retraction)}\n");
+                    strBuilder.Append($"{_bkey.ToString(nextRetraction)}\n");
                 else
-                    _str_builder.Append($"{_prefix}  {data}\n");
+                    strBuilder.Append($"{prefix}  {data}\n");
             }
-            _str_builder.Length -= 1;
-            return _str_builder.ToString();
+            strBuilder.Length -= 1;
+            return strBuilder.ToString();
         }
     }
 }

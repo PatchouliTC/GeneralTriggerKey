@@ -16,7 +16,7 @@ namespace GeneralTriggerKey.Group
         public string? GroupAlia { get; private set; }
 
         public EnumGroup(long id, Type enumType, string? aliaName = null)
-            : base(id, MapKeyType.Group, enumType.FullName)
+            : base(id, MapKeyType.GROUP, enumType.FullName)
         {
             Type = enumType;
             GroupAlia = aliaName;

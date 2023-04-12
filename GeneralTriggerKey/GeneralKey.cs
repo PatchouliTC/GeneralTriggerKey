@@ -69,7 +69,7 @@ namespace GeneralTriggerKey
         {
             if (Id.ConnectWith(key.Id, level, out var new_id))
             {
-                KMStorageWrapper.TryGetKey(new_id, out IBridgeKey value);
+                KeyMapStorage.Instance.TryGetKey(new_id, out IBridgeKey value);
                 return new GeneralKey(new_id, value.IsMultiKey, value.KeyRelateType, value.JumpLevel);
             }
             (string l, string r) = MakeErrorString(Id, key.Id);
@@ -84,9 +84,9 @@ namespace GeneralTriggerKey
         /// <returns></returns>
         public bool AndWithIfExist(GeneralKey right, out GeneralKey result)
         {
-            if (Id.AndWith(right.Id, out var _id))
+            if (Id.AndWith(right.Id, out var id))
             {
-                result = new GeneralKey(_id, true, MapKeyType.AND);
+                result = new GeneralKey(id, true, MapKeyType.AND);
                 return true;
             }
             result = default;
@@ -110,8 +110,8 @@ namespace GeneralTriggerKey
         }
         public static GeneralKey operator &(GeneralKey left, GeneralKey right)
         {
-            if (!(left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None || left.KeyType == MapKeyType.OR) ||
-                !(right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None || right.KeyType == MapKeyType.OR)
+            if (!(left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || left.KeyType == MapKeyType.OR) ||
+                !(right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || right.KeyType == MapKeyType.OR)
             )
                 throw new InvalidOperationException(message: "Not Support or/and with non or/and");
 
@@ -124,8 +124,8 @@ namespace GeneralTriggerKey
 
         public static GeneralKey operator |(GeneralKey left, GeneralKey right)
         {
-            if (!(left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None || left.KeyType == MapKeyType.OR) ||
-                !(right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None || right.KeyType == MapKeyType.OR)
+            if (!(left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || left.KeyType == MapKeyType.OR) ||
+                !(right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || right.KeyType == MapKeyType.OR)
             )
                 throw new InvalidOperationException(message: "Not Support or/and with non or/and");
 
@@ -138,15 +138,14 @@ namespace GeneralTriggerKey
 
         public static GeneralKey operator ^(GeneralKey left, GeneralKey right)
         {
-            if (!(left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None || left.KeyType == MapKeyType.OR) ||
-                !(right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None || right.KeyType == MapKeyType.OR)
+            if (!(left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || left.KeyType == MapKeyType.OR) ||
+                !(right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || right.KeyType == MapKeyType.OR)
             )
                 throw new InvalidOperationException(message: "Not Support or/and with non or/and");
             if (left.Id.SymmetricExceptWith(right.Id, out var new_id))
             {
-                KMStorageWrapper.TryGetKey(new_id, out IKey value);
-                var _is_multi_key = value as IMultiKey;
-                return new GeneralKey(new_id, value.IsMultiKey, _is_multi_key is null ? MapKeyType.None : _is_multi_key.KeyRelateType);
+                KeyMapStorage.Instance.TryGetKey(new_id, out IKey value);
+                return new GeneralKey(new_id, value.IsMultiKey, value.KeyRelateType);
             }
 
             (string l, string r) = MakeErrorString(left.Id, right.Id);
@@ -157,7 +156,7 @@ namespace GeneralTriggerKey
         {
             if (left.Id.DivideWith(right.Id, out var new_id))
             {
-                KMStorageWrapper.TryGetKey(new_id, out ILevelKey value);
+                KeyMapStorage.Instance.TryGetKey(new_id, out ILevelKey value);
                 return new GeneralKey(new_id, value.IsMultiKey, value.KeyRelateType, value.EndLevel);
             }
             (string l, string r) = MakeErrorString(left.Id, right.Id);
@@ -194,26 +193,26 @@ namespace GeneralTriggerKey
         }
         public override string ToString()
         {
-            KMStorageWrapper.TryGetKey(Id, out IKey value);
+            KeyMapStorage.Instance.TryGetKey(Id, out IKey value);
             return value.ToString();
         }
 
         public string ToGraphviz()
         {
-            KMStorageWrapper.TryGetKey(Id, out IKey value);
+            KeyMapStorage.Instance.TryGetKey(Id, out IKey value);
             return value.ToGraphvizNodeString();
         }
         private static (string, string) MakeErrorString(long idl, long idr)
         {
             if (idl == idr && idl == 0)
                 return ("EmptyKey", "EmptyKey");
-            string _lefts = "EmptyKey";
-            string _rights = "EmptyKey";
-            if (KMStorageWrapper.TryGetKey(idl, out IKey _left))
-                _lefts = _left.ToString();
-            if (KMStorageWrapper.TryGetKey(idr, out IKey _right))
-                _rights = _right.ToString();
-            return (_lefts, _rights);
+            string leftStr = "EmptyKey";
+            string rightStr = "EmptyKey";
+            if (KeyMapStorage.Instance.TryGetKey(idl, out IKey left))
+                leftStr = left.ToString();
+            if (KeyMapStorage.Instance.TryGetKey(idr, out IKey right))
+                rightStr = right.ToString();
+            return (leftStr, rightStr);
         }
     }
 }

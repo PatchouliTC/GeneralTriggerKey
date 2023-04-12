@@ -15,42 +15,41 @@ namespace GeneralTriggerKey.Utils
         internal static GeneralKey TransFormStringToKeyInst(string key_string)
         {
             //语法检查器校验完毕
-            var _after_systax_parser = ParseTextToSyntax(key_string);
-            return TransFormNode(_after_systax_parser!);
+            var afterCheckSyntaxNodes = ParseTextToSyntax(key_string);
+            return TransFormNode(afterCheckSyntaxNodes!);
         }
 
-        private static readonly Regex _sWhitespace = new Regex(@"\s+");
+        private static readonly Regex _sWhiteSpace = new Regex(@"\s+");
         private static GeneralKey TransFormNode(SyntaxNode node)
         {
             //已经过滤重组,剩余内容只存在& | ( )
             //暂不考虑+ <<
             //( )继续往深处递归
-            if (node is ParenthesizedExpressionSyntax _parenthesizedNode)
+            if (node is ParenthesizedExpressionSyntax parenthesizedNode)
             {
-                return TransFormNode(_parenthesizedNode.Expression);
+                return TransFormNode(parenthesizedNode.Expression);
             }
             //& | 逻辑符号,继续往深处递归左右两边
-            else if (node is BinaryExpressionSyntax _binaryNode)
+            else if (node is BinaryExpressionSyntax binaryNode)
             {
-                var left = TransFormNode(_binaryNode.Left);
-                var right = TransFormNode(_binaryNode.Right);
-                return _binaryNode.Kind() switch
+                var left = TransFormNode(binaryNode.Left);
+                var right = TransFormNode(binaryNode.Right);
+                return binaryNode.Kind() switch
                 {
                     SyntaxKind.BitwiseAndExpression => left & right,
                     SyntaxKind.BitwiseOrExpression => left | right,
                     SyntaxKind.DivideExpression => left / right,
-                    _ => throw new ArgumentException(message: $"Not support {_binaryNode.Kind()} operator")
+                    _ => throw new ArgumentException(message: $"Not support {binaryNode.Kind()} operator")
                 };
             }
-            else if (node is IdentifierNameSyntax _identifierNode)
+            else if (node is IdentifierNameSyntax identifierNode)
             {
-                var _name = _sWhitespace.Replace(_identifierNode.Identifier.Text, "");
-                if (KMStorageWrapper.TryConvert(_name, out IKey key))
+                var filteredName = _sWhiteSpace.Replace(identifierNode.Identifier.Text, "");
+                if (KeyMapStorage.Instance.TryConvert(filteredName, out IKey key))
                 {
-                    var _is_multi_key = key as IMultiKey;
-                    return new GeneralKey(key.Id, key.IsMultiKey, _is_multi_key is null ? MapKeyType.None : _is_multi_key.KeyRelateType);
+                    return new GeneralKey(key.Id, key.IsMultiKey, key.KeyRelateType);
                 }
-                throw new KeyNotFoundException(message: $"Unable find {_name} GeneralKey instance");
+                throw new KeyNotFoundException(message: $"Unable find {filteredName} GeneralKey instance");
             }
             else
             {
