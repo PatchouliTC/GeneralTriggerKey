@@ -544,10 +544,11 @@ namespace GeneralTriggerKey
                     //重组关联
                     foreach (var parent in willBeCurrentParentNodes)
                     {
-                        //如果该父节点不是其他任何父节点的子节点
-                        if (!willBeCurrentParentNodes.Any(x => x!.Id != parent!.Id && x.DAGChildKeys.Contains(parent)))
+                        //如果该父节点不是其他任何父节点的父节点
+                        //说明该节点是距离当前节点最近的一批节点之一
+                        if (!willBeCurrentParentNodes.Any(x => x!.Id != parent!.Id && x.DAGParentKeys.Contains(parent)))
                         {
-                            //从父节点去除即将与该节点关联的节点
+                            //从父节点去除即将与该节点关联的子节点
                             foreach (var needDisconnectNode in willBeCurrentChildNodes.Where(x => x!.DAGParentKeys.Contains(parent!)))
                             {
                                 parent!.DAGChildKeys.Remove(needDisconnectNode!);

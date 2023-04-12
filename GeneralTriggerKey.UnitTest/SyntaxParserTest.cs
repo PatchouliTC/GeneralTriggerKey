@@ -58,7 +58,21 @@ namespace GeneralTriggerKey.UnitTest
             var key2=G("(STKey4&STKey3)/STKey1");
             var key3 = G("ANY/STKey3");
             var key4 = G("(STKey4&STKey3)/(STKey3&STKey1)");
+            var key6 = G("ANY/ANY");
             var key5 = G("(STKey4&STKey3)/(STKey3|STKey1)");
+            Console.WriteLine(ToGraphvizCode());
+        }
+
+        [TestMethod]
+        public void TestStrToKeyNode_2()
+        {
+            
+            var key2 = G("(STKey4&STKey3)/STKey1");
+            var key3 = G("ANY/STKey3");
+            var key4 = G("(STKey4&STKey3)/(STKey3&STKey1)");
+            var key6 = G("ANY/ANY");
+
+
             Console.WriteLine(ToGraphvizCode());
         }
     }
