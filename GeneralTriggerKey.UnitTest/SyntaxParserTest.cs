@@ -52,14 +52,12 @@ namespace GeneralTriggerKey.UnitTest
         [TestMethod]
         public void TestStrToKeyNode()
         {
-            string key_string = "((STKey4&STKey3)|(STKey1 & STKey2))/(STKey3|STKey1)";
+            string key_string = "((STKey4&STKey3)|(STKey1))/(STKey3|STKey1)";
             var key=G(key_string);
             Assert.IsTrue(key.Id > 0);
-            var key2=G("(STKey4&STKey3)/STKey1");
-            var key3 = G("ANY/STKey3");
+            var key2=G("(STKey4&STKey3&STKey4)/STKey1");
+            var key7 = G("(STKey4&STKey3&STKey1&STKey2)/STKey1");
             var key4 = G("(STKey4&STKey3)/(STKey3&STKey1)");
-            var key6 = G("ANY/ANY");
-            var key5 = G("(STKey4&STKey3)/(STKey3|STKey1)");
             Console.WriteLine(ToGraphvizCode());
         }
 

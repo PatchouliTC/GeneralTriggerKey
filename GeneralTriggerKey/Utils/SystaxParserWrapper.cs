@@ -32,8 +32,10 @@ namespace GeneralTriggerKey.Utils
             //& | 逻辑符号,继续往深处递归左右两边
             else if (node is BinaryExpressionSyntax binaryNode)
             {
+                
                 var left = TransFormNode(binaryNode.Left);
                 var right = TransFormNode(binaryNode.Right);
+                Console.WriteLine($"Generate {left}&{right}");
                 return binaryNode.Kind() switch
                 {
                     SyntaxKind.BitwiseAndExpression => left & right,

@@ -313,24 +313,24 @@ namespace GeneralTriggerKey
 
             //注意类别AND OR仅查询对应类别的
             //需要将当前键添加作为关联子键的所有项【超集】
-            var needAddCurrent2ChildKeys = _multiKeyMap.Values
+            var needAddCurrent2ParentKeys = _multiKeyMap.Values
                     .Where(x =>
                     x.KeyRelateType == keyType &&
                     x.RelateSingleKeys.Count > factRelateAllSingleKeys.Count &&
                     x.RelateSingleKeys.IsSupersetOf(factRelateAllSingleKeys));
 
             //需要将当前键添加作为超集键的所有项【子集】
-            var needAddCurrent2ParentKeys = _multiKeyMap.Values
+            var needAddCurrent2ChildKeys = _multiKeyMap.Values
                     .Where(x =>
                     x.KeyRelateType == keyType &&
                     x.RelateSingleKeys.Count < factRelateAllSingleKeys.Count &&
                     factRelateAllSingleKeys.IsSupersetOf(x.RelateSingleKeys));
 
             //遍历所有超集
-            foreach (var parentKey in needAddCurrent2ChildKeys)
+            foreach (var parentKey in needAddCurrent2ParentKeys)
             {
                 //添加前删除所有即将作为当前键为子集的键，因为哪些键将关联自身
-                foreach (var needRemoveChildKey in parentKey.ChildKeys.Values.Where(x => x.IsMultiKey && needAddCurrent2ParentKeys.Any(y => y.Id == x.Id)))
+                foreach (var needRemoveChildKey in parentKey.ChildKeys.Values.Where(x => x.IsMultiKey && needAddCurrent2ChildKeys.Any(y => y.Id == x.Id)))
                 {
                     parentKey.ChildKeys.Remove(needRemoveChildKey.Id);
                     (needRemoveChildKey as IMultiKey)!.ParentKeys.RemoveAll(x => x.Id == parentKey.Id);
@@ -397,10 +397,10 @@ namespace GeneralTriggerKey
 
             var truthNeedAddedSingleKeys = new HashSet<long>();
             //遍历所有的子集,对应的超集都已经删除关联完毕,直接将当前键加入对应父关联
-            foreach (var parentKey in needAddCurrent2ParentKeys)
+            foreach (var parentKey in needAddCurrent2ChildKeys)
             {
                 //检查子集之间关系,如果相互存在包含关系则对于更小的子集忽略加入操作
-                if (needAddCurrent2ParentKeys.Any(x => x.Contains(parentKey.Id)))
+                if (needAddCurrent2ChildKeys.Any(x => x.Contains(parentKey.Id)))
                     continue;
 
                 newMultiKey.ChildKeys.Add(parentKey.Id, parentKey);
