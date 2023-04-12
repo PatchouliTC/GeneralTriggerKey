@@ -12,12 +12,12 @@ namespace GeneralTriggerKey.Benchmark
     [MapEnum]
     public enum MapTestEnum
     {
-        [EnumAlia("testA")]
-        A = 1,
-        [EnumAlia("testB", "TESTB")]
-        B = 2,
-        C = 3,
+        STKey1,
+        STKey2,
+        STKey3,
+        STKey4
     }
+
     [MemoryDiagnoser]
     public class CodeBenchmark
     { 
@@ -32,30 +32,17 @@ namespace GeneralTriggerKey.Benchmark
         {
             InjectEnumsFromAssembly(typeof(CodeBenchmark).Assembly);
         }
-
-        [Benchmark]
-        public void TestCodeAdd()
-        {
-            var key = Q(MapTestEnum.B)&Q(MapTestEnum.A);
-
-            _ = Q("testA") * key;
-        }
         [Benchmark]
         public void TestCodebyStr()
         {
-            var key = G("A|(B&C)");
+            var key1 = G("((STKey4&STKey3)|(STKey1))/(STKey3|STKey1)");
 
-            _ = Q("testA") * key;
+            var key2 = G("(STKey4&STKey3&STKey4)/STKey1");
+
+            var key3 = G("(STKey4&STKey3&STKey1&STKey2)/STKey1");
+
+            var res=key3 * key1;
         }
 
-        [Benchmark]
-        public void TestCodeCompareBoth()
-        {
-            var key1 = Q(MapTestEnum.B) & Q(MapTestEnum.A);
-
-            var key2 = Q(MapTestEnum.C) & Q(MapTestEnum.A);
-
-            _ = key1 * key2;
-        }
     }
 }
