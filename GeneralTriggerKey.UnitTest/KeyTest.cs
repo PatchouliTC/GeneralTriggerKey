@@ -203,13 +203,12 @@ namespace GeneralTriggerKey.UnitTest
             id1.AndWith(idH, out var id5);//(a&b)&h
             id5.AndWith(idE, out var id11);//(a&b)&h
             id3.OrWith(id4, out var id6);//(E|F)|(G|H)
-
+            id4.OrWith(idE, out var id12);
             Assert.IsTrue(id5.SymmetricExceptWith(id2, out var id7));
             Assert.IsTrue(id5.SymmetricExceptWith(idB, out var id8));
 
             Assert.IsTrue(id5.IntersectWith(id1, out var id9));
             Assert.IsTrue(id5.IntersectWith(idB, out var id10));
-            Console.WriteLine(ShowAllNodes());
             Console.WriteLine(ToGraphvizCode(true));
         }
 
@@ -286,7 +285,7 @@ namespace GeneralTriggerKey.UnitTest
 
             Assert.IsTrue(id_divide1 > 0);
 
-            Console.WriteLine(ShowAllNodes());
+            Console.WriteLine(ToGraphvizCode());
 
         }
 

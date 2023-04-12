@@ -336,6 +336,7 @@ namespace GeneralTriggerKey
                     {
                         foreach(var parent in topSearchNode.DAGParentKeys)
                         {
+                            if (ignoreCache.Contains(parent.Id)) continue;
                             circulateCache.Push(parent);
                             ignoreCache.Add(parent.Id);
                             if (parentCache.Contains(parent.Id)) parentCache.Remove(parent.Id);
@@ -353,6 +354,7 @@ namespace GeneralTriggerKey
                     {
                         foreach (var child in topSearchNode.DAGChildKeys)
                         {
+                            if (ignoreCache.Contains(child.Id)) continue;
                             circulateCache.Push(child);
                             ignoreCache.Add(child.Id);
                             if (childCache.Contains(child.Id)) childCache.Remove(child.Id);
@@ -360,9 +362,6 @@ namespace GeneralTriggerKey
                     }
                 }
             }
-
-
-
 
             //如果是or关系,对应的parent/child关系组反转
             if (newMultiKey.KeyRelateType == MapKeyType.OR) (parentCache, childCache) = (childCache, parentCache);
@@ -433,8 +432,8 @@ namespace GeneralTriggerKey
                 }
                 else if (newMultiKey.KeyRelateType == MapKeyType.OR)
                 {
-                    keyInst.DAGChildKeys.Add(newMultiKey);
                     newMultiKey.DAGParentKeys.Add(keyInst);
+                    keyInst.DAGChildKeys.Add(newMultiKey);
                     foreach (var child in newMultiKey.DAGParentKeys)
                     {
                         if (child.DAGParentKeys.Contains(keyInst))
@@ -460,165 +459,6 @@ namespace GeneralTriggerKey
                     AnyTypeCode.DAGParentKeys.Remove(parent);
                 }
             }
-
-            ////注意类别AND OR仅查询对应类别的
-            ////需要将当前键添加作为关联子键的所有项【超集】
-            //var needAddCurrent2ParentKeys = _multiKeyMap.Values
-            //        .Where(x =>
-            //        x.KeyRelateType == keyType &&
-            //        x.RelateSingleKeys.Count > factRelateAllSingleKeys.Count &&
-            //        x.RelateSingleKeys.IsSupersetOf(factRelateAllSingleKeys));
-
-            ////需要将当前键添加作为超集键的所有项【子集】
-            //var needAddCurrent2ChildKeys = _multiKeyMap.Values
-            //        .Where(x =>
-            //        x.KeyRelateType == keyType &&
-            //        x.RelateSingleKeys.Count < factRelateAllSingleKeys.Count &&
-            //        factRelateAllSingleKeys.IsSupersetOf(x.RelateSingleKeys));
-
-
-
-
-            ////遍历所有超集
-            //foreach (var parentKey in needAddCurrent2ParentKeys)
-            //{
-            //    //添加前删除所有即将作为当前键为子集的键，因为哪些键将关联自身
-            //    foreach (var needRemoveChildKey in parentKey.ChildKeys.Values.Where(x => x.IsMultiKey && needAddCurrent2ChildKeys.Any(y => y.Id == x.Id)))
-            //    {
-            //        parentKey.ChildKeys.Remove(needRemoveChildKey.Id);
-            //        (needRemoveChildKey as IMultiKey)!.ParentKeys.RemoveAll(x => x.Id == parentKey.Id);
-
-            //        //处理DAG视角的关联
-            //        if (keyType == MapKeyType.AND)
-            //        {
-            //            //AND关系,从child中删除所有超集,因为AND关系层遵循小AND<-大AND关系,将当前关系插入
-            //            needRemoveChildKey.DAGParentKeys.Remove(parentKey);
-            //            parentKey.DAGChildKeys.Remove(needRemoveChildKey);
-            //        }
-            //        else if (keyType == MapKeyType.OR)
-            //        {
-            //            //OR关系,DAG关系层反向
-            //            //Parent断开和child的DAG关系
-            //            parentKey.DAGParentKeys.Remove(needRemoveChildKey);
-            //            needRemoveChildKey.DAGChildKeys.Remove(parentKey);
-            //        }
-            //    }
-            //    //删除已经在当前键中包含的同时在该超集中存在的单键
-            //    foreach (var needRemoveSingleKey in parentKey.ChildKeys.Values.Where(x => !x.IsMultiKey && factRelateAllSingleKeys.Contains(x.Id)))
-            //    {
-            //        parentKey.ChildKeys.Remove(needRemoveSingleKey.Id);
-            //        //处理DAG视角的关联
-            //        if (keyType == MapKeyType.AND)
-            //        {
-            //            //AND关系,从child中删除所有超集,因为AND关系层遵循小Single<-大AND关系,将当前关系插入
-            //            needRemoveSingleKey.DAGParentKeys.Remove(parentKey);
-            //            parentKey.DAGChildKeys.Remove(needRemoveSingleKey);
-            //        }
-            //        else if (keyType == MapKeyType.OR)
-            //        {
-            //            //OR关系,DAG关系层反向
-            //            //Parent断开和child的DAG关系
-            //            parentKey.DAGParentKeys.Remove(needRemoveSingleKey);
-            //            needRemoveSingleKey.DAGChildKeys.Remove(parentKey);
-            //        }
-
-            //    }
-            //    //将自身添加进超集项的子键集并将该超集添加到该项的父关联
-            //    parentKey.ChildKeys.Add(newMultiKey.Id, newMultiKey);
-            //    newMultiKey.ParentKeys.Add(parentKey);
-
-
-
-            //    //处理DAG视角的关联
-            //    if (keyType == MapKeyType.AND)
-            //    {
-            //        //AND关系,将自身DAG上级关系关联上该_add_key_to_child
-            //        newMultiKey.DAGParentKeys.Add(parentKey);
-            //        parentKey.DAGChildKeys.Add(newMultiKey);
-            //    }
-            //    else if (keyType == MapKeyType.OR)
-            //    {
-            //        //OR关系,DAG上级关系反向
-            //        //parent是DAG的下级,关联上自身作为上级
-            //        parentKey.DAGParentKeys.Add(newMultiKey);
-            //        newMultiKey.DAGChildKeys.Add(parentKey);
-
-            //        //继承下级的触发ids
-            //        newMultiKey.CanTriggerNode.UnionWith(parentKey.CanTriggerNode);
-            //        //囊括下级
-            //        newMultiKey.CanTriggerNode.Add(parentKey.Id);
-            //    }
-            //}
-
-            //var truthNeedAddedSingleKeys = new HashSet<long>();
-            ////遍历所有的子集,对应的超集都已经删除关联完毕,直接将当前键加入对应父关联
-            //foreach (var parentKey in needAddCurrent2ChildKeys)
-            //{
-            //    //检查子集之间关系,如果相互存在包含关系则对于更小的子集忽略加入操作
-            //    if (needAddCurrent2ChildKeys.Any(x => x.Contains(parentKey.Id)))
-            //        continue;
-
-            //    newMultiKey.ChildKeys.Add(parentKey.Id, parentKey);
-            //    parentKey.ParentKeys.Add(newMultiKey);
-            //    truthNeedAddedSingleKeys.UnionWith(parentKey.RelateSingleKeys);
-
-            //    //处理DAG视角的关联
-            //    if (keyType == MapKeyType.AND)
-            //    {
-            //        //AND关系,将自身DAG上级关系关联上该_add_key_to_parent
-            //        parentKey.DAGParentKeys.Add(newMultiKey);
-            //        newMultiKey.DAGChildKeys.Add(parentKey);
-            //        //继承下级的触发ids
-            //        newMultiKey.CanTriggerNode.UnionWith(parentKey.CanTriggerNode);
-            //        //囊括下级
-            //        newMultiKey.CanTriggerNode.Add(parentKey.Id);
-            //    }
-            //    else if (keyType == MapKeyType.OR)
-            //    {
-            //        //OR关系,DAG上级关系反向
-            //        //parent是DAG的下级,关联上自身作为上级
-            //        newMultiKey.DAGParentKeys.Add(parentKey);
-            //        parentKey.DAGChildKeys.Add(newMultiKey);
-            //    }
-            //}
-
-            ////全部处理完毕,设置当前项的剩余单键关联
-            //truthNeedAddedSingleKeys.SymmetricExceptWith(factRelateAllSingleKeys);
-            //foreach (var key in truthNeedAddedSingleKeys)
-            //{
-            //    var keyInst = Keys.GetValueOrDefault(key);
-            //    newMultiKey.ChildKeys.Add(key, keyInst);
-            //    //处理DAG视角的关联
-            //    if (keyType == MapKeyType.AND)
-            //    {
-            //        //AND关系,将自身DAG上级关系关联上该_add_key_to_child
-            //        keyInst.DAGParentKeys.Add(newMultiKey);
-            //        newMultiKey.DAGChildKeys.Add(keyInst);
-            //        //AND关系新增单键,合并单键的triggernodes
-            //        newMultiKey.CanTriggerNode.UnionWith(keyInst.CanTriggerNode);
-            //        //并且将该单键加入处理
-            //        newMultiKey.CanTriggerNode.Add(keyInst.Id);
-            //    }
-            //    else if (keyType == MapKeyType.OR)
-            //    {
-            //        //OR关系,DAG上级关系反向
-            //        //parent是DAG的下级,关联上自身作为上级
-            //        newMultiKey.DAGParentKeys.Add(keyInst);
-            //        keyInst.DAGChildKeys.Add(newMultiKey);
-            //    }
-            //}
-
-            ////如果是OR关系,并且最终重新关联之后自身子节点为空,需要添加一个ANY节点作为触发
-            //if (newMultiKey.KeyRelateType == MapKeyType.OR && newMultiKey.DAGChildKeys.Count == 0)
-            //{
-            //    newMultiKey.DAGChildKeys.Add(AnyTypeCode);
-            //    newMultiKey.CanTriggerNode.Add(AnyTypeCode.Id);
-            //    AnyTypeCode.DAGParentKeys.Add(newMultiKey);
-            //}
-
-            ////通知该key的DAG父节点添加当前节点ID来更新可触发ID表
-            ////调用自身,顺带把自己也写入
-            //newMultiKey.NotifyUpperAddNode(newMultiKey.Id);
 
             //最终注册
             Keys.Add(newMultiKey.Id, newMultiKey);
@@ -646,7 +486,6 @@ namespace GeneralTriggerKey
                 bridgeKeyRuntimeId = -1;
                 return false;
             }
-
             if (Keys.TryGetValue(current, out IKey currentKeyInst) && Keys.TryGetValue(next, out IKey nextLevelKeyInst))
             {
                 if (currentKeyInst is ISimpleNode simpleKeyInst && nextLevelKeyInst is ISimpleNode nextLevelSimpleKeyInst)
@@ -660,13 +499,10 @@ namespace GeneralTriggerKey
                     //获取对应当前层的节点的对应当前层级的响应节点表
                     if (!simpleKeyInst.LevelTriggerNodes.TryGetValue(currentLevel, out var currentKeyTriggerNodes))
                     {
-                        //如果无表,说明未初始化,主动收集对应DAG子节点的当前层响应表
                         simpleKeyInst.CollectDAGChildsTriggerNodes(currentLevel);
-                        //写入自身+通知DAG父节点所有跃升到当前层的节点该节点可触发
                         simpleKeyInst.NotifyDAGUpperNodeToLevel(currentLevel, simpleKeyInst.Id);
                         simpleKeyInst.LevelTriggerNodes.TryGetValue(currentLevel, out currentKeyTriggerNodes);
                     }
-
                     //获取对应下一层的节点的对应当前层级的响应节点表
                     var nextLevel = currentLevel + 1;
                     if (!nextLevelSimpleKeyInst.LevelTriggerNodes.TryGetValue(nextLevel, out var nextLevelKeyTriggerNodes))
@@ -676,53 +512,77 @@ namespace GeneralTriggerKey
                         nextLevelSimpleKeyInst.LevelTriggerNodes.TryGetValue(nextLevel, out nextLevelKeyTriggerNodes);
                     }
 
-                    //获取能唤醒该节点的列表
-                    var willBeCurrentParentNodes = Keys.Values.
-                        Where(x =>
-                            x is IBridgeKey bridgeKeyInst
-                            && bridgeKeyInst.JumpLevel == newRegisterBridgeNode.JumpLevel
-                            && bridgeKeyInst.Current.LevelTriggerNodes.TryGetValue(bridgeKeyInst.JumpLevel, out var currentLevelTriggerNodes)
-                            && currentLevelTriggerNodes.Contains(newRegisterBridgeNode.Current.Id)
-                            && bridgeKeyInst.Next.LevelTriggerNodes.TryGetValue(bridgeKeyInst.JumpLevel + 1, out var nextLevelTriggerNodes)
-                            && nextLevelTriggerNodes.Contains(newRegisterBridgeNode.Next.Id)
-                        ).Select(x => x as IBridgeKey);
+                    var parentCache = new HashSet<long>();
+                    var childCache = new HashSet<long>();
+                    var circulateCache = new Stack<IKey>();
+                    var ignoreCache = new HashSet<long>();
 
-                    //获取该节点可唤醒的节点列表
-                    var willBeCurrentChildNodes = Keys.Values.
-                        Where(x =>
-                            x is IBridgeKey bridgeKeyInst
-                            && bridgeKeyInst.JumpLevel == newRegisterBridgeNode.JumpLevel
-                            && currentKeyTriggerNodes.Contains(bridgeKeyInst.Current.Id)
-                            && nextLevelKeyTriggerNodes.Contains(bridgeKeyInst.Next.Id)
-                        ).Select(x => x as IBridgeKey);
-
-                    //重组关联
-                    foreach (var parent in willBeCurrentParentNodes)
+                    foreach(var node in Keys.Values.Where(x => x is IBridgeKey bkey && bkey.JumpLevel==newRegisterBridgeNode.JumpLevel))
                     {
-                        //如果该父节点不是其他任何父节点的父节点
-                        //说明该节点是距离当前节点最近的一批节点之一
-                        if (!willBeCurrentParentNodes.Any(x => x!.Id != parent!.Id && x.DAGParentKeys.Contains(parent)))
+                        if (ignoreCache.Contains(node.Id))
+                            continue;
+                        var bridgeNode=node as IBridgeKey;
+
+                        //该节点可触发该节点
+                        if (bridgeNode!.Current.LevelTriggerNodes.TryGetValue(bridgeNode.JumpLevel,out var currentLevelTriggerNodes)
+                            &&bridgeNode!.Next.LevelTriggerNodes.TryGetValue(bridgeNode.JumpLevel+1,out var nextLevelTriggerNodes)
+                            && currentLevelTriggerNodes.Contains(newRegisterBridgeNode.Current.Id)
+                            && nextLevelTriggerNodes.Contains(newRegisterBridgeNode.Current.Id))
                         {
-                            //从父节点去除即将与该节点关联的子节点
-                            foreach (var needDisconnectNode in willBeCurrentChildNodes.Where(x => x!.DAGParentKeys.Contains(parent!)))
+                            parentCache.Add(node.Id);
+                            //循环所有该节点的祖先节点并将其全部加入忽略节点,同时如果之前加入过父节点记录的话对其进行删除操作
+                            circulateCache.Push(node);
+                            while (circulateCache.TryPop(out var topSearchNode))
                             {
-                                parent!.DAGChildKeys.Remove(needDisconnectNode!);
-                                needDisconnectNode!.DAGParentKeys.Remove(parent!);
+                                foreach (var parent in topSearchNode.DAGParentKeys)
+                                {
+                                    circulateCache.Push(parent);
+                                    ignoreCache.Add(parent.Id);
+                                    if (parentCache.Contains(parent.Id)) parentCache.Remove(parent.Id);
+                                }
                             }
-                            //将当前节点注册到对应的父节点的子节点下
-                            parent!.DAGChildKeys.Add(newRegisterBridgeNode);
-                            newRegisterBridgeNode.DAGParentKeys.Add(parent!);
+                        }
+                        else if (currentKeyTriggerNodes.Contains(bridgeNode.Current.Id)
+                            && nextLevelKeyTriggerNodes.Contains(bridgeNode.Next.Id))
+                        {
+                            childCache.Add(node.Id);
+                            //循环所有该节点的孙子节点并将其全部加入忽略节点,同时如果之前加入过子节点记录的话对其进行删除操作
+                            circulateCache.Push(node);
+                            while (circulateCache.TryPop(out var topSearchNode))
+                            {
+                                foreach (var child in topSearchNode.DAGChildKeys)
+                                {
+                                    circulateCache.Push(child);
+                                    ignoreCache.Add(child.Id);
+                                    if (childCache.Contains(child.Id)) childCache.Remove(child.Id);
+                                }
+                            }
                         }
                     }
 
-                    newRegisterBridgeNode.NotifyUpperAddNode(newRegisterBridgeNode.Id);
-
-                    foreach (var child in willBeCurrentChildNodes)
+                    //重组关联
+                    foreach(var parent in parentCache)
                     {
-                        child!.DAGParentKeys.Add(newRegisterBridgeNode);
-                        newRegisterBridgeNode.DAGChildKeys.Add(child);
-                        newRegisterBridgeNode.CanTriggerNode.UnionWith(child.CanTriggerNode);
+                        Keys.TryGetValue(parent, out var parentInst);
+                        foreach(var child in parentInst.DAGChildKeys.Where(x => childCache.Contains(x.Id)))
+                        {
+                            child.DAGParentKeys.Remove(parentInst);
+                            parentInst.DAGChildKeys.Remove(child);
+                        }
+                        parentInst.DAGChildKeys.Add(newRegisterBridgeNode);
+                        newRegisterBridgeNode.DAGParentKeys.Add(parentInst);
                     }
+
+                    foreach(var child in childCache)
+                    {
+                        Keys.TryGetValue(child, out var childInst);
+                        childInst.DAGParentKeys.Add(newRegisterBridgeNode);
+                        newRegisterBridgeNode.DAGChildKeys.Add(childInst);
+
+                        newRegisterBridgeNode.CanTriggerNode.UnionWith(childInst.CanTriggerNode);
+                    }
+
+                    newRegisterBridgeNode.NotifyUpperAddNode(newRegisterBridgeNode.Id);
 
                     Keys.Add(newRegisterBridgeNode.Id, newRegisterBridgeNode);
                     bridgeKeyRuntimeId = newRegisterBridgeNode.Id;
@@ -762,18 +622,39 @@ namespace GeneralTriggerKey
                     else throw new InvalidOperationException(message: $"Not support connect non bridge key link({keyInst})");
                 }
             }
-            if (registerBridggKeyIds.Length > 1)
+            else if (registerBridggKeyIds.Length > 1)
             {
+                IKey startKey=null!;
                 //节点检查,确保所有节点都是bridge节点,同时每个bridge节点之间是连续的
                 for (int i = 0; i < registerBridggKeyIds.Length - 1; i++)
                     if (Keys.TryGetValue(registerBridggKeyIds[i], out var keyInst1) && Keys.TryGetValue(registerBridggKeyIds[i + 1], out var keyInst2))
+                    {
                         if (keyInst1 is IBridgeKey bridgeKeyInst1 && keyInst2 is IBridgeKey bridgeKeyInst2)
                         {
                             if (bridgeKeyInst1.Next.Id != bridgeKeyInst2.Current.Id) throw new InvalidOperationException(message: $"Not support connect diff key link({bridgeKeyInst1}-{bridgeKeyInst2})");
-                            if (keySeqStart == 0) keySeqStart = bridgeKeyInst1.JumpLevel;
-                            if(i==registerBridggKeyIds.Length-2) keySeqEnd = bridgeKeyInst2.JumpLevel + 1;
+                            if (keySeqStart == 0)
+                            {
+                                keySeqStart = bridgeKeyInst1.JumpLevel;
+                                startKey = bridgeKeyInst1;
+                            }
+                            if (i == registerBridggKeyIds.Length - 2) keySeqEnd = bridgeKeyInst2.JumpLevel + 1;
                         }
                         else throw new InvalidOperationException(message: $"Not support connect non bridge key link({keyInst1}-{keyInst2})");
+                    }
+                //临时决定:左端桥高于1时,用ANY节点桥补齐
+                if (keySeqStart > 1)
+                {
+                    List<long> tempAttachBridgeNodes=new List<long>();
+                    for(int i=1;i<keySeqStart; i++)
+                    {
+                        long tempbridgekey = -1;
+                        if (i == keySeqStart - 1)TryCreateBridgeKey(out tempbridgekey, AnyTypeCode.Id, startKey.Id, i);
+                        else TryCreateBridgeKey(out tempbridgekey, AnyTypeCode.Id, AnyTypeCode.Id, i);
+                        tempAttachBridgeNodes.Add(tempbridgekey);
+                    }
+                    tempAttachBridgeNodes.AddRange(registerBridggKeyIds);
+                    registerBridggKeyIds = tempAttachBridgeNodes.ToArray();
+                }
             }
 
             var newLevelKeyHash = $"L|{keySeqStart}-{keySeqEnd}|{_hashIds.EncodeLong(registerBridggKeyIds)}";
@@ -784,133 +665,90 @@ namespace GeneralTriggerKey
 
             var newLevelNode = new LevelKey(IdCreator.Instance.GetId(), newLevelKeyHash, registerBridggKeyIds);
 
-            //重构关系
-            //获取即将成为子关系的父集键列表
-            //var _will_active_current_nodes = Keys.Values.
-            //    Where(x =>
-            //    x is ILevelKey _lkey//必须是层阶关系键
-            //    && _lkey.KeySequence.Length >= _new_level_node.KeySequence.Length//通路长度大于等于当前节点的才考虑,小于的一定无法触发
-            //    //循环当前节点的key序列,每个序列key的位置和目标键的同位置序列进行比较,必须全部是目标键key序列对应位置key包含当前key的对应位置的key
-            //    && !(_new_level_node.KeySequence
-            //        .Select((x, i) => (value: x, index: i))
-            //        .Any(y =>
-            //            !Keys.TryGetValue(_lkey.KeySequence[y.index], out var _target_key)
-            //            || !_target_key.CanTriggerNode.Contains(y.value)))
-            //    );
-
             var parentCache = new HashSet<long>();
-            var ignoreParentCache = new HashSet<long>();
+            var ignoreCache = new HashSet<long>();
             var circulateCache = new Stack<ILevelKey>();
             var childCache = new HashSet<long>();
-            var ignoreChildCache = new HashSet<long>();
             var newNodeBridgeKeyInstSequence = newLevelNode.KeySequence.Select(x => { Keys.TryGetValue(x, out var _truth_key); return _truth_key as IBridgeKey; }).ToArray();
-
 
             foreach (var node in Keys.Values.OfType<ILevelKey>())
             {
+                if (ignoreCache.Contains(node.Id))
+                    continue;
                 //可能为父节点
                 //最终将统计出当前节点所有可能的最近父集节点组
                 if (node.KeySequence.Length > newLevelNode.KeySequence.Length)
                 {
-                    if (ignoreParentCache.Contains(node.Id))
-                        continue;
                     //无论当前节点能否通过,将其父节点全部丢入忽略的parentnodes中
                     circulateCache.Push(node);
-                    while (circulateCache.Count > 0)
+                    while (circulateCache.TryPop(out var topParentNode))
                     {
-                        if (circulateCache.TryPop(out var topParentNode))
+                        foreach (var parent in topParentNode.DAGParentKeys)
                         {
-                            foreach (var parent in topParentNode.DAGParentKeys)
+                            if (parent is ILevelKey parentInst)
                             {
-                                if (parent is ILevelKey parentInst)
-                                {
-                                    if (ignoreParentCache.Contains(parent.Id))
-                                        continue;
-                                    circulateCache.Push(parentInst);
-                                    ignoreParentCache.Add(parentInst.Id);
-                                    //Keys无序,检查是否之前有存在,有的话删了
-                                    if (parentCache.Contains(parentInst.Id)) parentCache.Remove(parentInst.Id);
-                                }
+                                if (ignoreCache.Contains(parent.Id)) continue;
+                                circulateCache.Push(parentInst);
+                                ignoreCache.Add(parentInst.Id);
+                                //Keys无序,检查是否之前有存在,有的话删了
+                                if (parentCache.Contains(parentInst.Id)) parentCache.Remove(parentInst.Id);
                             }
                         }
                     }
-
-                    parentCache.Add(node.Id);
+                    
+                    //逐位比较,必须每位均可触发才可认为是父节点
                     for (int i = 0; i < newLevelNode.KeySequence.Length; i++)
                     {
                         //节点ID相同,直接通过
-                        if (node.KeySequence[i] == newNodeBridgeKeyInstSequence[i]!.Id)
-                            continue;
+                        if (node.KeySequence[i] == newNodeBridgeKeyInstSequence[i]!.Id) continue;
                         if (Keys.TryGetValue(node.KeySequence[i], out var BridgeKeysInst))
                         {
                             //任意序列位置不包含,直接跳出
-                            if (!BridgeKeysInst.CanTriggerNode.Contains(newLevelNode.KeySequence[i]))
-                            {
-                                parentCache.Remove(node.Id);
-                                ignoreParentCache.Add(node.Id);
-                                break;
-                            }
+                            if (!BridgeKeysInst.CanTriggerNode.Contains(newLevelNode.KeySequence[i])) break;
+                            //如果执行到最后一位也包含,加入考量父节点列表
+                            if (i == newLevelNode.KeySequence.Length - 1) parentCache.Add(node.Id);
                         }
+                        else break;
                     }
                 }
                 //可能为子节点
                 //最终将统计出当前节点所有可能的最近子集节点组
                 else if (node.KeySequence.Length < newLevelNode.KeySequence.Length)
                 {
-                    if (ignoreChildCache.Contains(node.Id))
-                        //存在于要求忽略的子节点中,跳过
-                        continue;
                     //无论当前节点能否通过,将其子节点全部丢入忽略的parentnodes中
                     circulateCache.Push(node);
-                    while (circulateCache.Count > 0)
+                    while (circulateCache.TryPop(out var childNode))
                     {
-                        if (circulateCache.TryPop(out var childNode))
+                        foreach (var child in childNode.DAGChildKeys)
                         {
-                            foreach (var child in childNode.DAGChildKeys)
+                            if (child is ILevelKey childInst)
                             {
-                                if (child is ILevelKey childInst)
-                                {
-                                    if (ignoreChildCache.Contains(child.Id))
-                                        continue;
-                                    circulateCache.Push(childInst);
-                                    ignoreChildCache.Add(childInst.Id);
-                                    //Keys无序,检查是否之前有存在,有的话删了
-                                    if (childCache.Contains(childInst.Id))
-                                        childCache.Remove(childInst.Id);
-                                }
+                                if (ignoreCache.Contains(child.Id)) continue;
+                                circulateCache.Push(childInst);
+                                ignoreCache.Add(childInst.Id);
+                                //Keys无序,检查是否之前有存在,有的话删了
+                                if (childCache.Contains(childInst.Id)) childCache.Remove(childInst.Id);
                             }
                         }
                     }
-
-                    childCache.Add(node.Id);
                     for (int i = 0; i < node.KeySequence.Length; i++)
                     {
                         //节点ID相同,直接通过
-                        if (node.KeySequence[i] == newNodeBridgeKeyInstSequence[i]!.Id)
-                            continue;
+                        if (node.KeySequence[i] == newNodeBridgeKeyInstSequence[i]!.Id) continue;
                         //任意序列位置不包含,直接跳出
-                        if (!newNodeBridgeKeyInstSequence[i]!.CanTriggerNode.Contains(node.KeySequence[i]))
-                        {
-                            childCache.Remove(node.Id);
-                            ignoreChildCache.Add(node.Id);
-                            break;
-                        }
+                        if (!newNodeBridgeKeyInstSequence[i]!.CanTriggerNode.Contains(node.KeySequence[i])) break;
+                        if (i == node.KeySequence.Length - 1) childCache.Add(node.Id);
                     }
                 }
                 //序列长度相等 不好说
                 else
                 {
-                    if (ignoreParentCache.Contains(node.Id))
-                        continue;
-
                     //-1=child,1=parent
                     int addThisNodeToChildOrParent = 0;
-
                     for (int i = 0; i < node.KeySequence.Length; i++)
                     {
                         //节点ID相同,直接通过
-                        if (node.KeySequence[i] == newNodeBridgeKeyInstSequence[i]!.Id)
-                            continue;
+                        if (node.KeySequence[i] == newNodeBridgeKeyInstSequence[i]!.Id) continue;
 
                         bool beParent = false;
                         //当前节点的序列X包含目标节点的序列X,该节点应该作child
@@ -925,62 +763,93 @@ namespace GeneralTriggerKey
                         //只能判断出该节点和此节点无关
                         if (!beChild && !beParent)
                         {
-                            ignoreParentCache.Add(node.Id);
+                            ignoreCache.Add(node.Id);
                             break;
                         }
 
-                        if (addThisNodeToChildOrParent != 0)
+                        if (addThisNodeToChildOrParent == 0) addThisNodeToChildOrParent = beChild ? -1 : 1;
+                        else
                         {
                             //前者节点关系是子当前是父,或者前者是父当前是子,存在通路交叉,跳出
                             if ((addThisNodeToChildOrParent < 0 && beParent) || (addThisNodeToChildOrParent > 0 && beChild))
                             {
-                                ignoreParentCache.Add(node.Id);
+                                ignoreCache.Add(node.Id);
                                 break;
                             }
                         }
-                        else
-                        {
-                            addThisNodeToChildOrParent = beChild ? -1 : 1;
-                        }
                     }
-                    if (!ignoreParentCache.Contains(node.Id))
+                    if (!ignoreCache.Contains(node.Id))
                     {
                         if (addThisNodeToChildOrParent > 0)
+                        {
                             parentCache.Add(node.Id);
+
+                            circulateCache.Push(node);
+                            while (circulateCache.TryPop(out var topParentNode))
+                            {
+                                foreach (var parent in topParentNode.DAGParentKeys)
+                                {
+                                    if (parent is ILevelKey parentInst)
+                                    {
+                                        circulateCache.Push(parentInst);
+                                        ignoreCache.Add(parentInst.Id);
+                                        //Keys无序,检查是否之前有存在,有的话删了
+                                        if (parentCache.Contains(parentInst.Id)) parentCache.Remove(parentInst.Id);
+                                    }
+                                }
+                            }
+                        }
                         else if (addThisNodeToChildOrParent < 0)
+                        {
                             childCache.Add(node.Id);
+                            circulateCache.Push(node);
+                            while (circulateCache.TryPop(out var topChildNode))
+                            {
+                                foreach (var child in topChildNode.DAGChildKeys)
+                                {
+                                    if (child is ILevelKey childInst)
+                                    {
+                                        circulateCache.Push(childInst);
+                                        ignoreCache.Add(childInst.Id);
+                                        //Keys无序,检查是否之前有存在,有的话删了
+                                        if (childCache.Contains(childInst.Id)) childCache.Remove(childInst.Id);
+                                    }
+                                }
+                            }
+                        }   
                         else
                             throw new InvalidCastException(message: "Connect level key error:equal compare boom!");
                     }
                 }
-
             }
+
             //构建关系树
             foreach (var parent in parentCache)
             {
                 Keys.TryGetValue(parent, out var parentInst);
-                foreach (var needDisconnectNode in parentInst.DAGChildKeys.Where(x => childCache.Contains(x.Id)))
+                foreach (var child in parentInst.DAGChildKeys.Where(x => childCache.Contains(x.Id)))
                 {
-                    needDisconnectNode.DAGParentKeys.Remove(parentInst);
-                    parentInst.DAGChildKeys.Remove(needDisconnectNode);
+                    child.DAGParentKeys.Remove(parentInst);
+                    parentInst.DAGChildKeys.Remove(child);
                 }
                 parentInst.DAGChildKeys.Add(newLevelNode);
                 newLevelNode.DAGParentKeys.Add(parentInst);
             }
-
-            newLevelNode.NotifyUpperAddNode(newLevelNode.Id);
 
             foreach (var child in childCache)
             {
                 Keys.TryGetValue(child, out var childInst);
                 childInst.DAGParentKeys.Add(newLevelNode);
                 newLevelNode.DAGChildKeys.Add(childInst);
+
                 newLevelNode.CanTriggerNode.UnionWith(childInst.CanTriggerNode);
             }
 
+            newLevelNode.NotifyUpperAddNode(newLevelNode.Id);
+
             Keys.Add(newLevelNode.Id, newLevelNode);
             levelKeyRuntimeId = newLevelNode.Id;
-            _createdBridgeKeyCache.Add(newLevelKeyHash, newLevelNode.Id);
+            _createdLevelKeyCache.Add(newLevelKeyHash, newLevelNode.Id);
             return true;
         }
 

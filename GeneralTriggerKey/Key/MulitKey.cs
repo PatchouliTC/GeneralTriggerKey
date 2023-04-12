@@ -164,6 +164,8 @@ namespace GeneralTriggerKey.Key
             {
                 foreach (var child in DAGChildKeys)
                 {
+                    if (child.KeyRelateType == MapKeyType.OR)
+                        continue;
                     if (child is MulitKey multiKey)
                         strBuilder.Append($"{multiKey.ToString(nextRetraction)}\n");
                     else

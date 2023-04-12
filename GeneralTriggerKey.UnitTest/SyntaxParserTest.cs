@@ -52,26 +52,31 @@ namespace GeneralTriggerKey.UnitTest
         [TestMethod]
         public void TestStrToKeyNode()
         {
-            string key_string = "((STKey4&STKey3)|(STKey1))/(STKey3|STKey1)";
-            var key=G(key_string);
+            var key=G("((STKey4&STKey3)|(STKey1))/(STKey3|STKey1)");
             Assert.IsTrue(key.Id > 0);
             var key2=G("(STKey4&STKey3&STKey4)/STKey1");
             var key7 = G("(STKey4&STKey3&STKey1&STKey2)/STKey1");
             var key4 = G("(STKey4&STKey3)/(STKey3&STKey1)");
-            Console.WriteLine(ToGraphvizCode());
+            Console.WriteLine(ToGraphvizCode(true));
         }
 
         [TestMethod]
         public void TestStrToKeyNode_2()
         {
-            
-            var key2 = G("(STKey4&STKey3)/STKey1");
-            var key3 = G("ANY/STKey3");
+            var key1 = G("((STKey4&STKey3)|(STKey1))/(STKey3|STKey1)");
+
+            var key2 = G("(STKey4&STKey3&STKey4)/STKey1");
+
+            var key3 = G("(STKey4&STKey3&STKey1&STKey2)/STKey1");
+
             var key4 = G("(STKey4&STKey3)/(STKey3&STKey1)");
-            var key6 = G("ANY/ANY");
+            var key5 = G("(STKey4&STKey3)/STKey1");
+            var key6 = G("ANY/STKey3");
+            var key7 = G("(STKey4&STKey3)/(STKey3&STKey1)");
+            var key8 = G("ANY/ANY");
 
-
-            Console.WriteLine(ToGraphvizCode());
+            Assert.IsTrue(key3 * key1);
+            Console.WriteLine(ToGraphvizCode(true));
         }
     }
 }

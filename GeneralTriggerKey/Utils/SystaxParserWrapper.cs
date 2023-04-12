@@ -35,7 +35,6 @@ namespace GeneralTriggerKey.Utils
                 
                 var left = TransFormNode(binaryNode.Left);
                 var right = TransFormNode(binaryNode.Right);
-                Console.WriteLine($"Generate {left}&{right}");
                 return binaryNode.Kind() switch
                 {
                     SyntaxKind.BitwiseAndExpression => left & right,

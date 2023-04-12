@@ -129,56 +129,59 @@ namespace GeneralTriggerKey.Utils.Extensions
                     else return false;
                 }
 
-                if (value1 is IBridgeKey bkey1 && value2 is IBridgeKey bkey2) return bkey1.CanTriggerNode.Contains(bkey2.Id);
-                else if (value1 is ILevelKey lkey1 && value2 is ILevelKey lkey2) return lkey1.CanTriggerNode.Contains(lkey2.Id);
-                else if (value1.KeyRelateType == MapKeyType.BRIDGE || value1.KeyRelateType == MapKeyType.LEVEL || value1.KeyRelateType == MapKeyType.BRIDGE || value1.KeyRelateType == MapKeyType.LEVEL)
-                {
-                    return false;
-                }
-                //双单例键,比较值相等
-                else if (!value1.IsMultiKey && !value2.IsMultiKey)
-                {
-                    if (mustContainKeyIdInst is null) return value1.Id == value2.Id;
-                    return value1.Id == value2.Id && value1.Id == mustContainKeyIdInst.Id;
-                }
-                //当前项是单键时,被比较项必须是or关系[and关系一定无法触发]
-                else if (!value1.IsMultiKey && value2.IsMultiKey && value2.KeyRelateType == MapKeyType.OR)
-                {
-                    if (mustContainKeyIdInst is null) return value1.CanTriggerNode.Contains(value2.Id);
-                    return mustContainKeyIdInst.Id == value1.Id && value1.CanTriggerNode.Contains(value2.Id);
-                    //var _multi_key = (value2 as IMultiKey);
-                    ////只要or中包含该基础节点即可
-                    //if (_need_contain_key is null)
-                    //    return _multi_key!.RelateSingleKeys.Contains(value1.Id);
-                    //return _need_contain_key.Id == value1.Id && _multi_key!.RelateSingleKeys.Contains(value1.Id);
-                }
-                //被比较项联合键+当前被比较对象能否触发目标对象
-                //当前项必须是and关系,or关系无比较意义
-                else if (value1.IsMultiKey && value1.KeyRelateType == MapKeyType.AND)
-                {
-                    var multiKeyInst1 = (value1 as IMultiKey);
-                    //项2是单例键,直接看项1的singlekey是否包含即可
-                    if (!value2.IsMultiKey)
-                    {
-                        if (mustContainKeyIdInst is null) return multiKeyInst1!.CanTriggerNode.Contains(value2.Id);
-                        return value2.Id == mustContainKeyIdInst.Id && multiKeyInst1!.CanTriggerNode.Contains(value2.Id);
-                    }
-                    else
-                    {
-                        var multiKeyInst2 = (value2 as IMultiKey);
+                return value1.CanTriggerNode.Contains(value2.Id);
+
+                //if (value1 is IBridgeKey bkey1 && value2 is IBridgeKey bkey2) return bkey1.CanTriggerNode.Contains(bkey2.Id);
+                //else if (value1 is ILevelKey lkey1 && value2 is ILevelKey lkey2) return lkey1.CanTriggerNode.Contains(lkey2.Id);
+
+                //else if (value1.KeyRelateType == MapKeyType.BRIDGE || value1.KeyRelateType == MapKeyType.LEVEL || value1.KeyRelateType == MapKeyType.BRIDGE || value1.KeyRelateType == MapKeyType.LEVEL)
+                //{
+                //    return false;
+                //}
+                ////双单例键,比较值相等
+                //else if (!value1.IsMultiKey && !value2.IsMultiKey)
+                //{
+                //    if (mustContainKeyIdInst is null) return value1.Id == value2.Id;
+                //    return value1.Id == value2.Id && value1.Id == mustContainKeyIdInst.Id;
+                //}
+                ////当前项是单键时,被比较项必须是or关系[and关系一定无法触发]
+                //else if (!value1.IsMultiKey && value2.IsMultiKey && value2.KeyRelateType == MapKeyType.OR)
+                //{
+                //    if (mustContainKeyIdInst is null) return value1.CanTriggerNode.Contains(value2.Id);
+                //    return mustContainKeyIdInst.Id == value1.Id && value1.CanTriggerNode.Contains(value2.Id);
+                //    //var _multi_key = (value2 as IMultiKey);
+                //    ////只要or中包含该基础节点即可
+                //    //if (_need_contain_key is null)
+                //    //    return _multi_key!.RelateSingleKeys.Contains(value1.Id);
+                //    //return _need_contain_key.Id == value1.Id && _multi_key!.RelateSingleKeys.Contains(value1.Id);
+                //}
+                ////被比较项联合键+当前被比较对象能否触发目标对象
+                ////当前项必须是and关系,or关系无比较意义
+                //else if (value1.IsMultiKey && value1.KeyRelateType == MapKeyType.AND)
+                //{
+                //    var multiKeyInst1 = (value1 as IMultiKey);
+                //    //项2是单例键,直接看项1的singlekey是否包含即可
+                //    if (!value2.IsMultiKey)
+                //    {
+                //        if (mustContainKeyIdInst is null) return multiKeyInst1!.CanTriggerNode.Contains(value2.Id);
+                //        return value2.Id == mustContainKeyIdInst.Id && multiKeyInst1!.CanTriggerNode.Contains(value2.Id);
+                //    }
+                //    else
+                //    {
+                //        var multiKeyInst2 = (value2 as IMultiKey);
 
 
-                        if (mustContainKeyIdInst is null) 
-                            return multiKeyInst1!.CanTriggerNode.Contains(multiKeyInst2!.Id);
-                        else
-                        {
-                            var isMustContainKeyInInst1 = multiKeyInst1!.Contains(mustContainKeyIdInst.Id);
-                            var isMustContainKeyInInst2 = multiKeyInst2!.Contains(mustContainKeyIdInst.Id);
-                            if (isMustContainKeyInInst1 && isMustContainKeyInInst2) 
-                                return multiKeyInst1!.CanTriggerNode.Contains(multiKeyInst2!.Id);
-                        }
-                    }
-                }
+                //        if (mustContainKeyIdInst is null) 
+                //            return multiKeyInst1!.CanTriggerNode.Contains(multiKeyInst2!.Id);
+                //        else
+                //        {
+                //            var isMustContainKeyInInst1 = multiKeyInst1!.Contains(mustContainKeyIdInst.Id);
+                //            var isMustContainKeyInInst2 = multiKeyInst2!.Contains(mustContainKeyIdInst.Id);
+                //            if (isMustContainKeyInInst1 && isMustContainKeyInInst2) 
+                //                return multiKeyInst1!.CanTriggerNode.Contains(multiKeyInst2!.Id);
+                //        }
+                //    }
+                //}
             }
             return false;
         }
