@@ -591,7 +591,7 @@ namespace GeneralTriggerKey
 
             Keys.TryGetValue(register_bridge_key_ids.Last(), out var last_key);
 
-            var _new_level_node = new LevelKey(IdCreator.Instance.GetId(), key_hash, (last_key as IBridgeKey)!.JumpLevel + 1, register_bridge_key_ids);
+            var _new_level_node = new LevelKey(IdCreator.Instance.GetId(), key_hash, register_bridge_key_ids);
 
             //重构关系
             //获取即将成为子关系的父集键列表

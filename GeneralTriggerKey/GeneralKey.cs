@@ -95,7 +95,7 @@ namespace GeneralTriggerKey
             if (!(left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None || left.KeyType == MapKeyType.OR) ||
                 !(right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None || right.KeyType == MapKeyType.OR)
             )
-                throw new ArgumentException(message: "Not Support or/and with non or/and");
+                throw new InvalidOperationException(message: "Not Support or/and with non or/and");
 
             if (left.Id.AndWith(right.Id, out var new_id))
                 return new GeneralKey(new_id, true, MapKeyType.AND);
@@ -109,7 +109,7 @@ namespace GeneralTriggerKey
             if (!(left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None || left.KeyType == MapKeyType.OR) ||
                 !(right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None || right.KeyType == MapKeyType.OR)
             )
-                throw new ArgumentException(message: "Not Support or/and with non or/and");
+                throw new InvalidOperationException(message: "Not Support or/and with non or/and");
 
             if (left.Id.OrWith(right.Id, out var new_id))
                 return new GeneralKey(new_id, true, MapKeyType.OR);
@@ -123,7 +123,7 @@ namespace GeneralTriggerKey
             if (!(left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None || left.KeyType == MapKeyType.OR) ||
                 !(right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None || right.KeyType == MapKeyType.OR)
             )
-                throw new ArgumentException(message: "Not Support or/and with non or/and");
+                throw new InvalidOperationException(message: "Not Support or/and with non or/and");
             if (left.Id.SymmetricExceptWith(right.Id, out var new_id))
             {
                 KMStorageWrapper.TryGetKey(new_id, out IKey value);
@@ -137,83 +137,15 @@ namespace GeneralTriggerKey
 
         public static GeneralKey operator /(GeneralKey left, GeneralKey right)
         {
-            if ((left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None || left.KeyType == MapKeyType.OR) &&
-                (right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None || right.KeyType == MapKeyType.OR)
-            )
+            if (left.Id.DivideWith(right.Id, out var new_id))
             {
-                KeyMapStorage.Instance.TryCreateBridgeKey(out var bridge_key_runtime_id, left.Id, right.Id, 1);
-                KeyMapStorage.Instance.TryRegisterLevelKey(out var level_key_runtime_id, bridge_key_runtime_id);
-                return new GeneralKey(level_key_runtime_id, false, MapKeyType.LEVEL, 2);
+                KMStorageWrapper.TryGetKey(new_id, out ILevelKey value);
+                return new GeneralKey(new_id, value.IsMultiKey, value.KeyRelateType, value.EndLevel);
             }
-            else if (left.KeyType == MapKeyType.Bridge && right.KeyType == MapKeyType.Bridge)
-            {
-                KeyMapStorage.Instance.TryRegisterLevelKey(out var level_key_runtime_id, left.Id, right.Id);
-                KMStorageWrapper.TryGetKey(level_key_runtime_id, out ILevelKey value);
-                return new GeneralKey(level_key_runtime_id, false, MapKeyType.LEVEL, value.MaxDepth);
-            }
-            else if (left.KeyType == MapKeyType.LEVEL && right.KeyType == MapKeyType.Bridge)
-            {
-                KMStorageWrapper.TryGetKey(left.Id, out ILevelKey _lkey);
-
-                var _temp = new List<long>(_lkey.KeySequence)
-                {
-                    right.Id
-                };
-                KeyMapStorage.Instance.TryRegisterLevelKey(out var level_key_runtime_id, _temp.ToArray());
-                KMStorageWrapper.TryGetKey(level_key_runtime_id, out ILevelKey value);
-                return new GeneralKey(level_key_runtime_id, false, MapKeyType.LEVEL, value.MaxDepth);
-            }
-            else if (left.KeyType == MapKeyType.LEVEL && right.KeyType == MapKeyType.LEVEL)
-            {
-                KMStorageWrapper.TryGetKey(left.Id, out ILevelKey _lkey1);
-                KMStorageWrapper.TryGetKey(right.Id, out ILevelKey _lkey2);
-
-                var _temp = new List<long>(_lkey1.KeySequence);
-                _temp.AddRange(_lkey2.KeySequence);
-                KeyMapStorage.Instance.TryRegisterLevelKey(out var level_key_runtime_id, _temp.ToArray());
-                KMStorageWrapper.TryGetKey(level_key_runtime_id, out ILevelKey value);
-                return new GeneralKey(level_key_runtime_id, false, MapKeyType.LEVEL, value.MaxDepth);
-            }
-            else if (left.KeyType == MapKeyType.Bridge &&
-                (right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None || right.KeyType == MapKeyType.OR))
-            {
-                KMStorageWrapper.TryGetKey(left.Id, out IBridgeKey _lbkey);
-                KeyMapStorage.Instance.TryCreateBridgeKey(out var bridge_key_runtime_id, _lbkey.Next.Id, right.Id, _lbkey.JumpLevel + 1);
-                KeyMapStorage.Instance.TryRegisterLevelKey(out var level_key_runtime_id, left.Id, bridge_key_runtime_id);
-                KMStorageWrapper.TryGetKey(level_key_runtime_id, out IKey value);
-                return new GeneralKey(level_key_runtime_id, false, MapKeyType.LEVEL, (value as ILevelKey)!.MaxDepth);
-            }
-
-            else if (left.KeyType == MapKeyType.LEVEL &&
-                (right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None || right.KeyType == MapKeyType.OR))
-            {
-                KMStorageWrapper.TryGetKey(left.Id, out ILevelKey _lkey1);
-
-                KMStorageWrapper.TryGetKey(_lkey1.KeySequence.Last(), out IBridgeKey _bkey);
-
-                KeyMapStorage.Instance.TryCreateBridgeKey(out var bridge_key_runtime_id, _bkey.Next.Id, right.Id, _bkey.JumpLevel + 1);
-                var _temp = new List<long>(_lkey1.KeySequence)
-                {
-                    bridge_key_runtime_id
-                };
-                KeyMapStorage.Instance.TryRegisterLevelKey(out var level_key_runtime_id, _temp.ToArray());
-                KMStorageWrapper.TryGetKey(level_key_runtime_id, out IKey value);
-                return new GeneralKey(level_key_runtime_id, false, MapKeyType.LEVEL, (value as ILevelKey)!.MaxDepth);
-            }
-            else if ((left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.None || left.KeyType == MapKeyType.OR) &&
-                (right.KeyType == MapKeyType.Bridge))
-            {
-                KMStorageWrapper.TryGetKey(right.Id, out IBridgeKey _lbkey);
-                if (_lbkey.JumpLevel > 1)
-                {
-                    KeyMapStorage.Instance.TryCreateBridgeKey(out var bridge_key_runtime_id, left.Id, _lbkey.Current.Id, _lbkey.JumpLevel - 1);
-                    KeyMapStorage.Instance.TryRegisterLevelKey(out var level_key_runtime_id, left.Id, bridge_key_runtime_id);
-                    KMStorageWrapper.TryGetKey(level_key_runtime_id, out IKey value);
-                    return new GeneralKey(level_key_runtime_id, false, MapKeyType.LEVEL, (value as ILevelKey)!.MaxDepth);
-                }
-            }
-            throw new ArgumentException(message: "Unsupport Operator for /");
+            (string l, string r) = MakeErrorString(left.Id, right.Id);
+            throw new InvalidOperationException(message: $"Try Do divide operator for {l} and {r} Failed.");
         }
+
         public static bool operator ==(GeneralKey left, GeneralKey right)
         {
             return left.Id == right.Id && left.Id != 0;

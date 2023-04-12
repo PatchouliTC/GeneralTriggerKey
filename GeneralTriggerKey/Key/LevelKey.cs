@@ -12,42 +12,39 @@ namespace GeneralTriggerKey.Key
     {
         public long[] KeySequence { get; private set; }
 
-        public int MaxDepth { get; private set; }
-
+        public int EndLevel { get; private set; }
+        public int StartLevel { get; private set; } 
         public bool IsMultiKey => true;
-
         public string DisplayName {get; private set;}
 
-        private int StartLevel;
-
-        public LevelKey(long id, string name, int depth, long[] key_list)
+        public LevelKey(long id, string name,long[] key_list)
             : base(id, MapKeyType.LEVEL, name)
         {
-            MaxDepth = depth;
             KeySequence = key_list;
 
             var _singlenamebuilder = new StringBuilder();
-
             for(int i=0;i<KeySequence.Length;i++)
             {
                 KeyMapStorage.Instance.Keys.TryGetValue(KeySequence[i], out var _key);
-                if(_key is IBridgeKey _bkey)
+                if (_key is IBridgeKey _bkey)
                 {
                     if (i == 0)
                     {
                         StartLevel = _bkey.JumpLevel;
                         _singlenamebuilder.Append($"({_bkey.Current.DisplayName})");
                     }
-                    if (i == KeySequence.Length-1) MaxDepth=_bkey.JumpLevel+ 1;
+                    if (i == KeySequence.Length - 1) EndLevel = _bkey.JumpLevel + 1;
+
                     _singlenamebuilder.Append($"/({_bkey.Next.DisplayName})");
                 }
+                else throw new ArgumentException(message:$"Level key relate sequence exist non bridge key {_key}");
             }
             DisplayName= _singlenamebuilder.ToString();
         }
 
         public override string ToGraphvizNodeString()
         {
-            return $"{Id} [label=\"[L]<{StartLevel}-{MaxDepth}>{DisplayName}\"];";
+            return $"{Id} [label=\"[L]<{StartLevel}-{EndLevel}>{DisplayName}\"];";
         }
 
         public override string ToString()
@@ -60,7 +57,7 @@ namespace GeneralTriggerKey.Key
             var _next_retraction = retraction + 2;
             var _prefix = new String(' ', retraction);
 
-            var _str_builder = new StringBuilder($"{_prefix}[LevelKey]({Id})<{DisplayName}>|{StartLevel}>{MaxDepth}|\n");
+            var _str_builder = new StringBuilder($"{_prefix}[LevelKey]({Id})<{DisplayName}>|{StartLevel}>{EndLevel}|\n");
 
             foreach (var data in DAGChildKeys)
             {
