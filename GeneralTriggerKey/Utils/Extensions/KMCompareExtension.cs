@@ -39,6 +39,10 @@ namespace GeneralTriggerKey.Utils.Extensions
                     return (lkey1.EndLevel >= lkey2.EndLevel)
                         && (lkey1.CanTriggerNode.Contains(lkey2.Id));
                 }
+                else if (value1.KeyRelateType == MapKeyType.BRIDGE || value1.KeyRelateType == MapKeyType.LEVEL || value1.KeyRelateType == MapKeyType.BRIDGE || value1.KeyRelateType == MapKeyType.LEVEL)
+                {
+                    return false;
+                }
                 //都不是,比较相等性
                 else if (!value1.IsMultiKey && !value2.IsMultiKey)
                 {
@@ -84,6 +88,10 @@ namespace GeneralTriggerKey.Utils.Extensions
             {
                 if (value1 is IBridgeKey bkey1 && value2 is IBridgeKey bkey2) return id1 == id2;
                 else if (value1 is ILevelKey lkey1 && value2 is ILevelKey lkey2) return id1.Contains(id2);
+                else if (value1.KeyRelateType == MapKeyType.BRIDGE || value1.KeyRelateType == MapKeyType.LEVEL || value1.KeyRelateType == MapKeyType.BRIDGE || value1.KeyRelateType == MapKeyType.LEVEL)
+                {
+                    return false;
+                }
                 else if (!value1.IsMultiKey && !value2.IsMultiKey) return id1 == id2;
                 else if ((value1.IsMultiKey && value2.IsMultiKey &&
                     (value1.KeyRelateType == value2.KeyRelateType)
@@ -121,9 +129,12 @@ namespace GeneralTriggerKey.Utils.Extensions
                     else return false;
                 }
 
-
                 if (value1 is IBridgeKey bkey1 && value2 is IBridgeKey bkey2) return bkey1.CanTriggerNode.Contains(bkey2.Id);
                 else if (value1 is ILevelKey lkey1 && value2 is ILevelKey lkey2) return lkey1.CanTriggerNode.Contains(lkey2.Id);
+                else if (value1.KeyRelateType == MapKeyType.BRIDGE || value1.KeyRelateType == MapKeyType.LEVEL || value1.KeyRelateType == MapKeyType.BRIDGE || value1.KeyRelateType == MapKeyType.LEVEL)
+                {
+                    return false;
+                }
                 //双单例键,比较值相等
                 else if (!value1.IsMultiKey && !value2.IsMultiKey)
                 {
@@ -281,6 +292,10 @@ namespace GeneralTriggerKey.Utils.Extensions
             resultId = -1;
             if (KeyMapStorage.Instance.TryGetKey(id1, out IKey key1) && KeyMapStorage.Instance.TryGetKey(id2, out IKey key2))
             {
+                if (key1.KeyRelateType == MapKeyType.BRIDGE || key1.KeyRelateType == MapKeyType.LEVEL || key2.KeyRelateType == MapKeyType.BRIDGE || key2.KeyRelateType == MapKeyType.LEVEL)
+                {
+                    return false;
+                }
                 return KMStorageWrapper.TryRegisterMultiKey(out resultId, MapKeyType.OR, id1, id2);
             }
             return false;
@@ -303,8 +318,12 @@ namespace GeneralTriggerKey.Utils.Extensions
             resultId = -1;
             if (KeyMapStorage.Instance.TryGetKey(id1, out IKey value1) && KeyMapStorage.Instance.TryGetKey(id2, out IKey value2))
             {
+                if(value1.KeyRelateType==MapKeyType.BRIDGE||value1.KeyRelateType==MapKeyType.LEVEL|| value2.KeyRelateType == MapKeyType.BRIDGE || value2.KeyRelateType == MapKeyType.LEVEL)
+                {
+                    return false;
+                }
                 //二者均不为or关系
-                if (
+                else if (
                     !(value1.IsMultiKey && value1.KeyRelateType == MapKeyType.OR) &&
                     !(value2.IsMultiKey && value2.KeyRelateType == MapKeyType.OR)
                     )
@@ -397,8 +416,12 @@ namespace GeneralTriggerKey.Utils.Extensions
             resultId = -1;
             if (KeyMapStorage.Instance.TryGetKey(id1, out IKey value1) && KeyMapStorage.Instance.TryGetKey(id2, out IKey value2))
             {
+                if (value1.KeyRelateType == MapKeyType.BRIDGE || value1.KeyRelateType == MapKeyType.LEVEL || value1.KeyRelateType == MapKeyType.BRIDGE || value1.KeyRelateType == MapKeyType.LEVEL)
+                {
+                    return false;
+                }
                 //二者均不为or关系
-                if (
+                else if (
                     !(value1.IsMultiKey && value1.KeyRelateType == MapKeyType.OR) &&
                     !(value2.IsMultiKey && value2.KeyRelateType == MapKeyType.OR)
                     )
