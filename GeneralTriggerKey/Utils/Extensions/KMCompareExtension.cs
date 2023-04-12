@@ -560,8 +560,8 @@ namespace GeneralTriggerKey.Utils.Extensions
                 }
 
                 //左层右单键,单键组装深一层桥然后拼接层级
-                else if (value1.KeyRelateType == MapKeyType.LEVEL &&
-                    (value2.KeyRelateType == MapKeyType.AND || value2.KeyRelateType == MapKeyType.None || value2.KeyRelateType == MapKeyType.OR))
+                else if (value1.KeyRelateType == MapKeyType.LEVEL
+                    && (value2.KeyRelateType == MapKeyType.AND || value2.KeyRelateType == MapKeyType.None || value2.KeyRelateType == MapKeyType.OR))
                 {
                     KMStorageWrapper.TryGetKey(value1.Id, out ILevelKey _lkey1);
                     KMStorageWrapper.TryGetKey(_lkey1.KeySequence[_lkey1.KeySequence.Length - 1], out IBridgeKey _bkey);
@@ -572,17 +572,18 @@ namespace GeneralTriggerKey.Utils.Extensions
                     return KeyMapStorage.Instance.TryRegisterLevelKey(out id_result, _temp.ToArray());
                 }
                 //左层级右桥,在该层级后接续新的桥
-                else if (value1.KeyRelateType == MapKeyType.LEVEL && value2.KeyRelateType == MapKeyType.Bridge)
+                else if (value1.KeyRelateType == MapKeyType.LEVEL
+                    && value2.KeyRelateType == MapKeyType.Bridge)
                 {
                     KMStorageWrapper.TryGetKey(value1.Id, out ILevelKey _lkey);
 
-                    var _temp = new List<long>(_lkey.KeySequence){value2.Id};
+                    var _temp = new List<long>(_lkey.KeySequence) { value2.Id };
                     return KeyMapStorage.Instance.TryRegisterLevelKey(out id_result, _temp.ToArray());
                 }
 
                 //左桥右单键,单键组装深1层桥然后拼接层级
                 else if (value1.KeyRelateType == MapKeyType.Bridge
-                    &&(value2.KeyRelateType == MapKeyType.AND || value2.KeyRelateType == MapKeyType.None || value2.KeyRelateType == MapKeyType.OR))
+                    && (value2.KeyRelateType == MapKeyType.AND || value2.KeyRelateType == MapKeyType.None || value2.KeyRelateType == MapKeyType.OR))
                 {
                     KMStorageWrapper.TryGetKey(value1.Id, out IBridgeKey _lbkey);
                     KeyMapStorage.Instance.TryCreateBridgeKey(out var bridge_key_runtime_id, _lbkey.Next.Id, value2.Id, _lbkey.JumpLevel + 1);
@@ -644,7 +645,13 @@ namespace GeneralTriggerKey.Utils.Extensions
         /// <returns></returns>
         public static bool ConnectWith(this long id1, long id2, int level, out long id_result)
         {
-            return KeyMapStorage.Instance.TryCreateBridgeKey(out id_result, id1, id2, level);
+            id_result = -1;
+            if (KMStorageWrapper.TryGetKey(id1, out ISimpleNode value1) && KMStorageWrapper.TryGetKey(id2, out ISimpleNode value2))
+            {
+                return KeyMapStorage.Instance.TryCreateBridgeKey(out id_result, value1.Id, value2.Id, level);
+            }
+                
+            return false;
         }
     }
 }
