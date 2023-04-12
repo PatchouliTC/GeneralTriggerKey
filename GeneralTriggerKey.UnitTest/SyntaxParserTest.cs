@@ -55,7 +55,11 @@ namespace GeneralTriggerKey.UnitTest
             string key_string = "((STKey4&STKey3)|(STKey1 & STKey2))/(STKey3|STKey1)";
             var key=G(key_string);
             Assert.IsTrue(key.Id > 0);
-            Console.WriteLine(key);
+            var key2=G("(STKey4&STKey3)/STKey1");
+            var key3 = G("(STKey4&STKey3)/STKey3");
+            var key4 = G("(STKey4&STKey3)/(STKey3&STKey1)");
+            var key5 = G("(STKey4&STKey3)/(STKey3|STKey1)");
+            Console.WriteLine(key4);
         }
     }
 }
