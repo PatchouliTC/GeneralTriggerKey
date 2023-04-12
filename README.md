@@ -15,6 +15,7 @@ public enum MapEnum
     [EnumAlia("tB", "TB")]
     B = 2,
     C = 3,
+    D = 4,
 }
 ```
 Note: each enum value can use ```EnumAlia```for it's short alia
@@ -29,7 +30,7 @@ InjectEnumsFromAssembly(typeof(<AnyClassType>).Assembly);
 All need functions are in Operator,you can use it like these
 ```cs
 using static GeneralTriggerKey.Operator;
-var k1=G("A|(B&C)");//get key from string expression
+var k1=G("((A&B)|(C&D))/(A|C)");//get key from string expression
 var k2=Q(MapTestEnum.C);//get key from known enum key
 var k3=Q("tB");//get key by name or alia--if enums,you can use it's key name
 var k4=R("runtime_custom_new_key");//try register a new runtime added key
