@@ -52,7 +52,7 @@ namespace GeneralTriggerKey.UnitTest
         [TestMethod]
         public void TestStrToKeyNode()
         {
-            string key_string = "(STKey4&STKey3)|(STKey1 & STKey2)";
+            string key_string = "((STKey4&STKey3)|(STKey1 & STKey2))/(STKey3|STKey1)";
             var key=G(key_string);
             Assert.IsTrue(key.Id > 0);
             Console.WriteLine(key);
