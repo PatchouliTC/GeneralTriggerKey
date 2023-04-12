@@ -570,22 +570,38 @@ namespace GeneralTriggerKey
         public bool TryRegisterLevelKey(out long level_key_runtime_id, params long[] register_bridge_key_ids)
         {
             level_key_runtime_id = -1;
-            //节点检查,确保所有节点都是bridge节点,同时每个bridge节点之间是连续的
-            for (int i = 0; i < register_bridge_key_ids.Length - 1; i++)
-                if (Keys.TryGetValue(register_bridge_key_ids[i], out var key1) && Keys.TryGetValue(register_bridge_key_ids[i + 1], out var key2))
-                    if (key1 is IBridgeKey _key1 && key2 is IBridgeKey _key2)
+            if (register_bridge_key_ids.Length == 0) return false;
+
+            var seq_start = 0;
+            var seq_end = 0;
+
+            if (register_bridge_key_ids.Length == 1)
+            {
+                if(Keys.TryGetValue(register_bridge_key_ids[0], out var key1))
+                {
+                    if (key1 is IBridgeKey _key1)
                     {
-                        if (_key1.Next.Id != _key2.Current.Id)
-                            throw new InvalidOperationException(message: $"Not support connect diff key link({_key1}-{_key2})");
+                        seq_start = _key1.JumpLevel;
+                        seq_end = _key1.JumpLevel + 1;
                     }
-                    else
-                    {
-                        throw new InvalidOperationException(message: $"Not support connect non bridge key link({key1}-{key2})");
-                    }
+                    else throw new InvalidOperationException(message: $"Not support connect non bridge key link({key1})");
+                }
+            }
+            if (register_bridge_key_ids.Length > 1)
+            {
+                //节点检查,确保所有节点都是bridge节点,同时每个bridge节点之间是连续的
+                for (int i = 0; i < register_bridge_key_ids.Length - 1; i++)
+                    if (Keys.TryGetValue(register_bridge_key_ids[i], out var key1) && Keys.TryGetValue(register_bridge_key_ids[i + 1], out var key2))
+                        if (key1 is IBridgeKey _key1 && key2 is IBridgeKey _key2)
+                        {
+                            if (_key1.Next.Id != _key2.Current.Id) throw new InvalidOperationException(message: $"Not support connect diff key link({_key1}-{_key2})");
+                            if (seq_start == 0) seq_start = _key1.JumpLevel;
+                            if(i==register_bridge_key_ids.Length-2) seq_end = _key2.JumpLevel + 1;
+                        }
+                        else throw new InvalidOperationException(message: $"Not support connect non bridge key link({key1}-{key2})");
+            }
 
-
-
-            var key_hash = $"L|{_hashids.EncodeLong(register_bridge_key_ids)}";
+            var key_hash = $"L|{seq_start}-{seq_end}|{_hashids.EncodeLong(register_bridge_key_ids)}";
             if (_created_level_key_cache.TryGetValue(key_hash, out level_key_runtime_id))
                 return true;
 
@@ -613,6 +629,7 @@ namespace GeneralTriggerKey
             var _child_nodes = new HashSet<long>();
             var _ignore_child_nodes = new HashSet<long>();
             var _new_node_seq = _new_level_node.KeySequence.Select(x => { Keys.TryGetValue(x, out var _truth_key); return _truth_key as IBridgeKey; }).ToArray();
+
 
             foreach (var node in Keys.Values.OfType<ILevelKey>())
             {

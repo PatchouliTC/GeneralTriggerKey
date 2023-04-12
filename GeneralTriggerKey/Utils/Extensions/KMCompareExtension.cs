@@ -625,7 +625,7 @@ namespace GeneralTriggerKey.Utils.Extensions
                     KMStorageWrapper.TryGetKey(value2.Id, out ILevelKey _rkey1);
                     if (_rkey1.StartLevel > 1)
                     {
-                        KMStorageWrapper.TryGetKey(_rkey1.KeySequence[1], out IBridgeKey _bkey);
+                        KMStorageWrapper.TryGetKey(_rkey1.KeySequence[0], out IBridgeKey _bkey);
                         KeyMapStorage.Instance.TryCreateBridgeKey(out var bridge_key_runtime_id, value1.Id, _bkey.Current.Id, _bkey.JumpLevel - 1);
                         var _temp = new List<long>() { bridge_key_runtime_id };
                         _temp.AddRange(_rkey1.KeySequence);
