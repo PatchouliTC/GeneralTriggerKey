@@ -19,6 +19,7 @@ namespace GeneralTriggerKey.Key
         {
             Range = range;
             DisplayName = name;
+            CanTriggerNode.Add(Id);
         }
 
         public override string ToGraphvizNodeString()

@@ -12,13 +12,9 @@ namespace GeneralTriggerKey.Key
     internal sealed class MulitKey : SimpleKeyNode, IMultiKey
     {
         public bool IsMultiKey => true;
-
-        public Dictionary<long, IKey> ChildKeys { get; private set; }
-        public List<IMultiKey> ParentKeys { get; private set; }
         public HashSet<long> RelateSingleKeys { get; private set; }
         public string DisplayName { get; private set; }
         public long[] MultiKeys { get; private set; }
-        public bool HasOtherMultiKey => ChildKeys.Values.Any(x => x.IsMultiKey);
 
         #region Search Cache
         private HashSet<long> _containSearchCache = new HashSet<long>();
@@ -33,9 +29,8 @@ namespace GeneralTriggerKey.Key
         public MulitKey(long id, MapKeyType keyType, HashSet<long> relatesinglekeys, string name, IEnumerable<long> relateKeys, HashSet<string>? alias = null)
             : base(id, keyType, name)
         {
-            ChildKeys = new Dictionary<long, IKey>();
-            ParentKeys = new List<IMultiKey>();
             RelateSingleKeys = relatesinglekeys ?? new HashSet<long>();
+            CanTriggerNode.Add(Id);
 
             var nameBuilder = new StringBuilder();
             if (KeyRelateType == MapKeyType.AND)
@@ -81,39 +76,41 @@ namespace GeneralTriggerKey.Key
             if (_checkedContainKeys.Contains(id))
                 return false;
             _checkedContainKeys.Add(id);
-            //检查子集和全展开后的单例键是否存在
-            if (ChildKeys.ContainsKey(id) || RelateSingleKeys.Contains(id))
+            if (RelateSingleKeys.Contains(id))
             {
                 _containSearchCache.Add(id);
                 return true;
             }
 
-            //不存在则检查所有复合键类型的子集
-            foreach (var child in ChildKeys.Values.OfType<IMultiKey>())
-            {
-                //递归遍历深层级
-                if (child.Contains(id))
-                {
-                    _containSearchCache.Add(id);
-                    return true;
-                }
-            }
-            //如果当前项是OR,需要将singlekey中是AND关系的联合键取出并进行检查包含性
             if (KeyRelateType == MapKeyType.OR)
             {
-                foreach (var singleKey in RelateSingleKeys)
+                foreach (var key in DAGParentKeys)
                 {
-                    KeyMapStorage.Instance.Keys.TryGetValue(singleKey, out var singleKeyInst);
-                    if (singleKeyInst is IMultiKey factMultiKeyInst)
+                    if (key.KeyRelateType == MapKeyType.NONE)
+                        continue;
+                    var multiKey=key as IMultiKey;
+                    if (multiKey!.Contains(id))
                     {
-                        if (factMultiKeyInst.Contains(id))
-                        {
-                            _containSearchCache.Add(id);
-                            return true;
-                        }
+                        _containSearchCache.Add(id);
+                        return true;
                     }
                 }
             }
+            else if (KeyRelateType == MapKeyType.AND)
+            {
+                foreach (var key in DAGChildKeys)
+                {
+                    if (key.KeyRelateType == MapKeyType.NONE)
+                        continue;
+                    var multiKey = key as IMultiKey;
+                    if (multiKey!.Contains(id))
+                    {
+                        _containSearchCache.Add(id);
+                        return true;
+                    }
+                }
+            }
+
             return false;
         }
         public bool IsRSupersetOf(IMultiKey key)
@@ -163,14 +160,27 @@ namespace GeneralTriggerKey.Key
 
             var strBuilder = new StringBuilder($"{prefix}[Multikey]({Id})<{DisplayName}>\n");
 
-            foreach (var data in ChildKeys)
+            if (KeyRelateType == MapKeyType.AND)
             {
-                if (data.Value is MulitKey)
-                    strBuilder.Append($"{(data.Value as MulitKey)!.ToString(nextRetraction)}\n");
-                else
-                    strBuilder.Append($"{prefix}  {data.Value}\n");
+                foreach (var child in DAGChildKeys)
+                {
+                    if (child is MulitKey multiKey)
+                        strBuilder.Append($"{multiKey.ToString(nextRetraction)}\n");
+                    else
+                        strBuilder.Append($"{prefix}  {child}\n");
+                }
             }
-            strBuilder.Length -= 1;
+            else if (KeyRelateType == MapKeyType.OR)
+            {
+                foreach (var child in DAGParentKeys)
+                {
+                    if (child is MulitKey multiKey)
+                        strBuilder.Append($"{multiKey.ToString(nextRetraction)}\n");
+                    else
+                        strBuilder.Append($"{prefix}  {child}\n");
+                }
+            }
+                strBuilder.Length -= 1;
             return strBuilder.ToString();
         }
     }

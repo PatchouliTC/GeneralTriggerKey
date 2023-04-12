@@ -40,7 +40,7 @@ namespace GeneralTriggerKey.Key
         {
             OriginId = originId;
             BelongEnumGroup = belongGroup;
-
+            CanTriggerNode.Add(Id);
             DisplayName = Name!.Split('-').Last();
         }
 

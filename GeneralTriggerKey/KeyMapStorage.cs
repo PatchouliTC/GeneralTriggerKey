@@ -180,7 +180,7 @@ namespace GeneralTriggerKey
             var newRuntimeSingleKey = new RunTimeKey(id: IdCreator.Instance.GetId(), name: callName, range: range);
 
             //默认挂载ANY节点
-            if(AnyTypeCode != null)
+            if (AnyTypeCode != null)
             {
                 newRuntimeSingleKey.DAGChildKeys.Add(AnyTypeCode);
                 newRuntimeSingleKey.CanTriggerNode.Add(AnyTypeCode.Id);
@@ -225,9 +225,11 @@ namespace GeneralTriggerKey
                     {
                         if (exist_key is ILevelKey || exist_key is IBridgeKey)
                             return false;
-                        //AND关系中,any节点没有实际意义,忽略
                         if (exist_key.Id == AnyTypeCode.Id)
-                            continue;
+                        {
+                            multiKeyRuntimeId = AnyTypeCode.Id;
+                            return true;
+                        }
 
                         //针对联合key和单一key不同处理
                         if (exist_key.IsMultiKey)
@@ -263,7 +265,6 @@ namespace GeneralTriggerKey
                     {
                         if (exist_key is ILevelKey || exist_key is IBridgeKey)
                             return false;
-                        //OR关系中,出现ANY节点,直接返回ANY节点
                         if (exist_key.Id == AnyTypeCode.Id)
                         {
                             multiKeyRuntimeId = AnyTypeCode.Id;
@@ -311,147 +312,140 @@ namespace GeneralTriggerKey
                 name: keysAfterHash,
                 relateKeys: afterOrderKeys);
 
-            //注意类别AND OR仅查询对应类别的
-            //需要将当前键添加作为关联子键的所有项【超集】
-            var needAddCurrent2ParentKeys = _multiKeyMap.Values
-                    .Where(x =>
-                    x.KeyRelateType == keyType &&
-                    x.RelateSingleKeys.Count > factRelateAllSingleKeys.Count &&
-                    x.RelateSingleKeys.IsSupersetOf(factRelateAllSingleKeys));
+            var parentCache = new HashSet<long>();
+            var childCache = new HashSet<long>();
+            var circulateCache = new Stack<IKey>();
+            var ignoreCache = new HashSet<long>();
+            var shouldIgnoreKeys=new HashSet<long>();
 
-            //需要将当前键添加作为超集键的所有项【子集】
-            var needAddCurrent2ChildKeys = _multiKeyMap.Values
-                    .Where(x =>
-                    x.KeyRelateType == keyType &&
-                    x.RelateSingleKeys.Count < factRelateAllSingleKeys.Count &&
-                    factRelateAllSingleKeys.IsSupersetOf(x.RelateSingleKeys));
-
-            //遍历所有超集
-            foreach (var parentKey in needAddCurrent2ParentKeys)
+            //获取联合键与当前键的关系
+            foreach (var node in _multiKeyMap.Values)
             {
-                //添加前删除所有即将作为当前键为子集的键，因为哪些键将关联自身
-                foreach (var needRemoveChildKey in parentKey.ChildKeys.Values.Where(x => x.IsMultiKey && needAddCurrent2ChildKeys.Any(y => y.Id == x.Id)))
-                {
-                    parentKey.ChildKeys.Remove(needRemoveChildKey.Id);
-                    (needRemoveChildKey as IMultiKey)!.ParentKeys.RemoveAll(x => x.Id == parentKey.Id);
-
-                    //处理DAG视角的关联
-                    if (keyType == MapKeyType.AND)
-                    {
-                        //AND关系,从child中删除所有超集,因为AND关系层遵循小AND<-大AND关系,将当前关系插入
-                        needRemoveChildKey.DAGParentKeys.Remove(parentKey);
-                        parentKey.DAGChildKeys.Remove(needRemoveChildKey);
-                    }
-                    else if (keyType == MapKeyType.OR)
-                    {
-                        //OR关系,DAG关系层反向
-                        //Parent断开和child的DAG关系
-                        parentKey.DAGParentKeys.Remove(needRemoveChildKey);
-                        needRemoveChildKey.DAGChildKeys.Remove(parentKey);
-                    }
-                }
-                //删除已经在当前键中包含的同时在该超集中存在的单键
-                foreach (var needRemoveSingleKey in parentKey.ChildKeys.Values.Where(x => !x.IsMultiKey && factRelateAllSingleKeys.Contains(x.Id)))
-                {
-                    parentKey.ChildKeys.Remove(needRemoveSingleKey.Id);
-                    //处理DAG视角的关联
-                    if (keyType == MapKeyType.AND)
-                    {
-                        //AND关系,从child中删除所有超集,因为AND关系层遵循小Single<-大AND关系,将当前关系插入
-                        needRemoveSingleKey.DAGParentKeys.Remove(parentKey);
-                        parentKey.DAGChildKeys.Remove(needRemoveSingleKey);
-                    }
-                    else if (keyType == MapKeyType.OR)
-                    {
-                        //OR关系,DAG关系层反向
-                        //Parent断开和child的DAG关系
-                        parentKey.DAGParentKeys.Remove(needRemoveSingleKey);
-                        needRemoveSingleKey.DAGChildKeys.Remove(parentKey);
-                    }
-
-                }
-                //将自身添加进超集项的子键集并将该超集添加到该项的父关联
-                parentKey.ChildKeys.Add(newMultiKey.Id, newMultiKey);
-                newMultiKey.ParentKeys.Add(parentKey);
-
-                //处理DAG视角的关联
-                if (keyType == MapKeyType.AND)
-                {
-                    //AND关系,将自身DAG上级关系关联上该_add_key_to_child
-                    newMultiKey.DAGParentKeys.Add(parentKey);
-                    parentKey.DAGChildKeys.Add(newMultiKey);
-                }
-                else if (keyType == MapKeyType.OR)
-                {
-                    //OR关系,DAG上级关系反向
-                    //parent是DAG的下级,关联上自身作为上级
-                    parentKey.DAGParentKeys.Add(newMultiKey);
-                    newMultiKey.DAGChildKeys.Add(parentKey);
-
-                    //继承下级的触发ids
-                    newMultiKey.CanTriggerNode.UnionWith(parentKey.CanTriggerNode);
-                    //囊括下级
-                    newMultiKey.CanTriggerNode.Add(parentKey.Id);
-                }
-            }
-
-            var truthNeedAddedSingleKeys = new HashSet<long>();
-            //遍历所有的子集,对应的超集都已经删除关联完毕,直接将当前键加入对应父关联
-            foreach (var parentKey in needAddCurrent2ChildKeys)
-            {
-                //检查子集之间关系,如果相互存在包含关系则对于更小的子集忽略加入操作
-                if (needAddCurrent2ChildKeys.Any(x => x.Contains(parentKey.Id)))
+                if (node.KeyRelateType != newMultiKey.KeyRelateType)
                     continue;
-
-                newMultiKey.ChildKeys.Add(parentKey.Id, parentKey);
-                parentKey.ParentKeys.Add(newMultiKey);
-                truthNeedAddedSingleKeys.UnionWith(parentKey.RelateSingleKeys);
-
-                //处理DAG视角的关联
-                if (keyType == MapKeyType.AND)
+                if (ignoreCache.Contains(node.Id))
+                    continue;
+                //该node是当前节点的超集
+                if(node.RelateSingleKeys.Count>newMultiKey.RelateSingleKeys.Count 
+                    && node.RelateSingleKeys.IsSupersetOf(newMultiKey.RelateSingleKeys))
                 {
-                    //AND关系,将自身DAG上级关系关联上该_add_key_to_parent
-                    parentKey.DAGParentKeys.Add(newMultiKey);
-                    newMultiKey.DAGChildKeys.Add(parentKey);
-                    //继承下级的触发ids
-                    newMultiKey.CanTriggerNode.UnionWith(parentKey.CanTriggerNode);
-                    //囊括下级
-                    newMultiKey.CanTriggerNode.Add(parentKey.Id);
+                    parentCache.Add(node.Id);
+                    //循环所有该节点的祖先节点并将其全部加入忽略节点,同时如果之前加入过父节点记录的话对其进行删除操作
+                    circulateCache.Push(node);
+                    while (circulateCache.TryPop(out var topSearchNode))
+                    {
+                        foreach(var parent in topSearchNode.DAGParentKeys)
+                        {
+                            circulateCache.Push(parent);
+                            ignoreCache.Add(parent.Id);
+                            if (parentCache.Contains(parent.Id)) parentCache.Remove(parent.Id);
+                        }
+                    }
                 }
-                else if (keyType == MapKeyType.OR)
+                //该node是当前节点的子集
+                else if (node.RelateSingleKeys.Count < newMultiKey.RelateSingleKeys.Count
+                    && newMultiKey.RelateSingleKeys.IsSupersetOf(node.RelateSingleKeys))
                 {
-                    //OR关系,DAG上级关系反向
-                    //parent是DAG的下级,关联上自身作为上级
-                    newMultiKey.DAGParentKeys.Add(parentKey);
-                    parentKey.DAGChildKeys.Add(newMultiKey);
+                    childCache.Add(node.Id);
+                    //循环所有该节点的孙子节点并将其全部加入忽略节点,同时如果之前加入过子节点记录的话对其进行删除操作
+                    circulateCache.Push(node);
+                    while (circulateCache.TryPop(out var topSearchNode))
+                    {
+                        foreach (var child in topSearchNode.DAGChildKeys)
+                        {
+                            circulateCache.Push(child);
+                            ignoreCache.Add(child.Id);
+                            if (childCache.Contains(child.Id)) childCache.Remove(child.Id);
+                        }
+                    }
                 }
             }
 
-            //全部处理完毕,设置当前项的剩余单键关联
-            truthNeedAddedSingleKeys.SymmetricExceptWith(factRelateAllSingleKeys);
-            foreach (var key in truthNeedAddedSingleKeys)
+
+
+
+            //如果是or关系,对应的parent/child关系组反转
+            if (newMultiKey.KeyRelateType == MapKeyType.OR) (parentCache, childCache) = (childCache, parentCache);
+
+            var relateChildKeyIgnoreKeyIds = new HashSet<long>();
+
+            //遍历实际父节点
+            foreach(var parentId in parentCache)
             {
-                var keyInst = Keys.GetValueOrDefault(key);
-                newMultiKey.ChildKeys.Add(key, keyInst);
-                //处理DAG视角的关联
-                if (keyType == MapKeyType.AND)
+                Keys.TryGetValue(parentId, out var parent);
+                //如果父节点的子节点中存在即将转换为当前节点子节点的节点,断开其连接
+                foreach(var needDisconnectChild in parent.DAGChildKeys.Where(x => childCache.Contains(x.Id)))
                 {
-                    //AND关系,将自身DAG上级关系关联上该_add_key_to_child
+                    needDisconnectChild.DAGParentKeys.Remove(parent);
+                    parent.DAGChildKeys.Remove(needDisconnectChild);
+                }
+                //当前节点写入父节点
+                parent.DAGChildKeys.Add(newMultiKey);
+                newMultiKey.DAGParentKeys.Add(parent);
+
+                //如果是OR关系,此时写入的是超集关系的childCache
+                //获取对应的Child(Parent)的relatenodes
+                if (newMultiKey.KeyRelateType == MapKeyType.OR)
+                {
+                    //如果是联合键,取其所有关联单键
+                    if (parent is IMultiKey multiParent)
+                        relateChildKeyIgnoreKeyIds.UnionWith(multiParent.RelateSingleKeys);
+                    else
+                        relateChildKeyIgnoreKeyIds.Add(parent.Id);
+                }
+            }
+            foreach(var childId in childCache)
+            {
+                Keys.TryGetValue(childId, out var child);
+
+                child.DAGParentKeys.Add(newMultiKey);
+                newMultiKey.DAGChildKeys.Add(child);
+                if (newMultiKey.KeyRelateType == MapKeyType.AND)
+                {
+                    //如果是联合键,取其所有关联单键
+                    if (child is IMultiKey multiChild)
+                        relateChildKeyIgnoreKeyIds.UnionWith(multiChild.RelateSingleKeys);
+                    else
+                        relateChildKeyIgnoreKeyIds.Add(child.Id);
+                }
+            }
+
+            //取交集,此时获取的是不存在于以上连接的节点的列表
+            relateChildKeyIgnoreKeyIds.SymmetricExceptWith(newMultiKey.RelateSingleKeys);
+            foreach(var keyId in relateChildKeyIgnoreKeyIds)
+            {
+                //存在单键没有过滤的情况,需要额外判断此轮增添的key是否隶属于父节点,是的话需要丢弃
+                Keys.TryGetValue(keyId, out var keyInst);
+                if (newMultiKey.KeyRelateType == MapKeyType.AND)
+                {
                     keyInst.DAGParentKeys.Add(newMultiKey);
                     newMultiKey.DAGChildKeys.Add(keyInst);
-                    //AND关系新增单键,合并单键的triggernodes
-                    newMultiKey.CanTriggerNode.UnionWith(keyInst.CanTriggerNode);
-                    //并且将该单键加入处理
-                    newMultiKey.CanTriggerNode.Add(keyInst.Id);
+                    foreach(var parent in newMultiKey.DAGParentKeys)
+                    {
+                        if (parent.DAGChildKeys.Contains(keyInst))
+                        {
+                            parent.DAGChildKeys.Remove(keyInst);
+                            keyInst.DAGParentKeys.Remove(parent);
+                        }
+                    }
+
+
                 }
-                else if (keyType == MapKeyType.OR)
+                else if (newMultiKey.KeyRelateType == MapKeyType.OR)
                 {
-                    //OR关系,DAG上级关系反向
-                    //parent是DAG的下级,关联上自身作为上级
-                    newMultiKey.DAGParentKeys.Add(keyInst);
                     keyInst.DAGChildKeys.Add(newMultiKey);
+                    newMultiKey.DAGParentKeys.Add(keyInst);
+                    foreach (var child in newMultiKey.DAGParentKeys)
+                    {
+                        if (child.DAGParentKeys.Contains(keyInst))
+                        {
+                            child.DAGParentKeys.Remove(keyInst);
+                            keyInst.DAGChildKeys.Remove(child);
+                        }
+                    }
                 }
             }
+            newMultiKey.NotifyUpperAddNode(newMultiKey.Id);
 
             //如果是OR关系,并且最终重新关联之后自身子节点为空,需要添加一个ANY节点作为触发
             if (newMultiKey.KeyRelateType == MapKeyType.OR && newMultiKey.DAGChildKeys.Count == 0)
@@ -459,11 +453,172 @@ namespace GeneralTriggerKey
                 newMultiKey.DAGChildKeys.Add(AnyTypeCode);
                 newMultiKey.CanTriggerNode.Add(AnyTypeCode.Id);
                 AnyTypeCode.DAGParentKeys.Add(newMultiKey);
+                //和当前节点关联的所有节点与ANY的关联全部消去
+                foreach(var parent in newMultiKey.DAGParentKeys)
+                {
+                    parent.DAGChildKeys.Remove(AnyTypeCode);
+                    AnyTypeCode.DAGParentKeys.Remove(parent);
+                }
             }
 
-            //通知该key的DAG父节点添加当前节点ID来更新可触发ID表
-            //调用自身,顺带把自己也写入
-            newMultiKey.NotifyUpperAddNode(newMultiKey.Id);
+            ////注意类别AND OR仅查询对应类别的
+            ////需要将当前键添加作为关联子键的所有项【超集】
+            //var needAddCurrent2ParentKeys = _multiKeyMap.Values
+            //        .Where(x =>
+            //        x.KeyRelateType == keyType &&
+            //        x.RelateSingleKeys.Count > factRelateAllSingleKeys.Count &&
+            //        x.RelateSingleKeys.IsSupersetOf(factRelateAllSingleKeys));
+
+            ////需要将当前键添加作为超集键的所有项【子集】
+            //var needAddCurrent2ChildKeys = _multiKeyMap.Values
+            //        .Where(x =>
+            //        x.KeyRelateType == keyType &&
+            //        x.RelateSingleKeys.Count < factRelateAllSingleKeys.Count &&
+            //        factRelateAllSingleKeys.IsSupersetOf(x.RelateSingleKeys));
+
+
+
+
+            ////遍历所有超集
+            //foreach (var parentKey in needAddCurrent2ParentKeys)
+            //{
+            //    //添加前删除所有即将作为当前键为子集的键，因为哪些键将关联自身
+            //    foreach (var needRemoveChildKey in parentKey.ChildKeys.Values.Where(x => x.IsMultiKey && needAddCurrent2ChildKeys.Any(y => y.Id == x.Id)))
+            //    {
+            //        parentKey.ChildKeys.Remove(needRemoveChildKey.Id);
+            //        (needRemoveChildKey as IMultiKey)!.ParentKeys.RemoveAll(x => x.Id == parentKey.Id);
+
+            //        //处理DAG视角的关联
+            //        if (keyType == MapKeyType.AND)
+            //        {
+            //            //AND关系,从child中删除所有超集,因为AND关系层遵循小AND<-大AND关系,将当前关系插入
+            //            needRemoveChildKey.DAGParentKeys.Remove(parentKey);
+            //            parentKey.DAGChildKeys.Remove(needRemoveChildKey);
+            //        }
+            //        else if (keyType == MapKeyType.OR)
+            //        {
+            //            //OR关系,DAG关系层反向
+            //            //Parent断开和child的DAG关系
+            //            parentKey.DAGParentKeys.Remove(needRemoveChildKey);
+            //            needRemoveChildKey.DAGChildKeys.Remove(parentKey);
+            //        }
+            //    }
+            //    //删除已经在当前键中包含的同时在该超集中存在的单键
+            //    foreach (var needRemoveSingleKey in parentKey.ChildKeys.Values.Where(x => !x.IsMultiKey && factRelateAllSingleKeys.Contains(x.Id)))
+            //    {
+            //        parentKey.ChildKeys.Remove(needRemoveSingleKey.Id);
+            //        //处理DAG视角的关联
+            //        if (keyType == MapKeyType.AND)
+            //        {
+            //            //AND关系,从child中删除所有超集,因为AND关系层遵循小Single<-大AND关系,将当前关系插入
+            //            needRemoveSingleKey.DAGParentKeys.Remove(parentKey);
+            //            parentKey.DAGChildKeys.Remove(needRemoveSingleKey);
+            //        }
+            //        else if (keyType == MapKeyType.OR)
+            //        {
+            //            //OR关系,DAG关系层反向
+            //            //Parent断开和child的DAG关系
+            //            parentKey.DAGParentKeys.Remove(needRemoveSingleKey);
+            //            needRemoveSingleKey.DAGChildKeys.Remove(parentKey);
+            //        }
+
+            //    }
+            //    //将自身添加进超集项的子键集并将该超集添加到该项的父关联
+            //    parentKey.ChildKeys.Add(newMultiKey.Id, newMultiKey);
+            //    newMultiKey.ParentKeys.Add(parentKey);
+
+
+
+            //    //处理DAG视角的关联
+            //    if (keyType == MapKeyType.AND)
+            //    {
+            //        //AND关系,将自身DAG上级关系关联上该_add_key_to_child
+            //        newMultiKey.DAGParentKeys.Add(parentKey);
+            //        parentKey.DAGChildKeys.Add(newMultiKey);
+            //    }
+            //    else if (keyType == MapKeyType.OR)
+            //    {
+            //        //OR关系,DAG上级关系反向
+            //        //parent是DAG的下级,关联上自身作为上级
+            //        parentKey.DAGParentKeys.Add(newMultiKey);
+            //        newMultiKey.DAGChildKeys.Add(parentKey);
+
+            //        //继承下级的触发ids
+            //        newMultiKey.CanTriggerNode.UnionWith(parentKey.CanTriggerNode);
+            //        //囊括下级
+            //        newMultiKey.CanTriggerNode.Add(parentKey.Id);
+            //    }
+            //}
+
+            //var truthNeedAddedSingleKeys = new HashSet<long>();
+            ////遍历所有的子集,对应的超集都已经删除关联完毕,直接将当前键加入对应父关联
+            //foreach (var parentKey in needAddCurrent2ChildKeys)
+            //{
+            //    //检查子集之间关系,如果相互存在包含关系则对于更小的子集忽略加入操作
+            //    if (needAddCurrent2ChildKeys.Any(x => x.Contains(parentKey.Id)))
+            //        continue;
+
+            //    newMultiKey.ChildKeys.Add(parentKey.Id, parentKey);
+            //    parentKey.ParentKeys.Add(newMultiKey);
+            //    truthNeedAddedSingleKeys.UnionWith(parentKey.RelateSingleKeys);
+
+            //    //处理DAG视角的关联
+            //    if (keyType == MapKeyType.AND)
+            //    {
+            //        //AND关系,将自身DAG上级关系关联上该_add_key_to_parent
+            //        parentKey.DAGParentKeys.Add(newMultiKey);
+            //        newMultiKey.DAGChildKeys.Add(parentKey);
+            //        //继承下级的触发ids
+            //        newMultiKey.CanTriggerNode.UnionWith(parentKey.CanTriggerNode);
+            //        //囊括下级
+            //        newMultiKey.CanTriggerNode.Add(parentKey.Id);
+            //    }
+            //    else if (keyType == MapKeyType.OR)
+            //    {
+            //        //OR关系,DAG上级关系反向
+            //        //parent是DAG的下级,关联上自身作为上级
+            //        newMultiKey.DAGParentKeys.Add(parentKey);
+            //        parentKey.DAGChildKeys.Add(newMultiKey);
+            //    }
+            //}
+
+            ////全部处理完毕,设置当前项的剩余单键关联
+            //truthNeedAddedSingleKeys.SymmetricExceptWith(factRelateAllSingleKeys);
+            //foreach (var key in truthNeedAddedSingleKeys)
+            //{
+            //    var keyInst = Keys.GetValueOrDefault(key);
+            //    newMultiKey.ChildKeys.Add(key, keyInst);
+            //    //处理DAG视角的关联
+            //    if (keyType == MapKeyType.AND)
+            //    {
+            //        //AND关系,将自身DAG上级关系关联上该_add_key_to_child
+            //        keyInst.DAGParentKeys.Add(newMultiKey);
+            //        newMultiKey.DAGChildKeys.Add(keyInst);
+            //        //AND关系新增单键,合并单键的triggernodes
+            //        newMultiKey.CanTriggerNode.UnionWith(keyInst.CanTriggerNode);
+            //        //并且将该单键加入处理
+            //        newMultiKey.CanTriggerNode.Add(keyInst.Id);
+            //    }
+            //    else if (keyType == MapKeyType.OR)
+            //    {
+            //        //OR关系,DAG上级关系反向
+            //        //parent是DAG的下级,关联上自身作为上级
+            //        newMultiKey.DAGParentKeys.Add(keyInst);
+            //        keyInst.DAGChildKeys.Add(newMultiKey);
+            //    }
+            //}
+
+            ////如果是OR关系,并且最终重新关联之后自身子节点为空,需要添加一个ANY节点作为触发
+            //if (newMultiKey.KeyRelateType == MapKeyType.OR && newMultiKey.DAGChildKeys.Count == 0)
+            //{
+            //    newMultiKey.DAGChildKeys.Add(AnyTypeCode);
+            //    newMultiKey.CanTriggerNode.Add(AnyTypeCode.Id);
+            //    AnyTypeCode.DAGParentKeys.Add(newMultiKey);
+            //}
+
+            ////通知该key的DAG父节点添加当前节点ID来更新可触发ID表
+            ////调用自身,顺带把自己也写入
+            //newMultiKey.NotifyUpperAddNode(newMultiKey.Id);
 
             //最终注册
             Keys.Add(newMultiKey.Id, newMultiKey);
@@ -1025,6 +1180,8 @@ namespace GeneralTriggerKey
                 {
                     foreach (var _line in key.DAGParentKeys)
                     {
+                        if (_line.KeyRelateType == MapKeyType.NONE && _line.DAGParentKeys.Count == 0)
+                            continue;
                         graphvizConnectionline.AppendLine($"{_line.Id} -> {key.Id};");
                         _has_line_keys.Add(_line.Id);
                         _has_line_keys.Add(key.Id);
