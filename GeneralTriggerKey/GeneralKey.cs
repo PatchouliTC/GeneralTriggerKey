@@ -59,6 +59,24 @@ namespace GeneralTriggerKey
         }
 
         /// <summary>
+        /// 将两个键关联为指定层的桥
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="level">层级</param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public GeneralKey Connect(GeneralKey key, int level = 1)
+        {
+            if (Id.ConnectWith(key.Id, level, out var new_id))
+            {
+                KMStorageWrapper.TryGetKey(new_id, out IBridgeKey value);
+                return new GeneralKey(new_id, value.IsMultiKey, value.KeyRelateType, value.JumpLevel);
+            }
+            (string l, string r) = MakeErrorString(Id, key.Id);
+            throw new InvalidOperationException(message: $"Try Do connect operator for {l} and {r} Failed.");
+        }
+
+        /// <summary>
         /// 尝试进行与操作,如果与操作后结果并没有被注册过则返回false
         /// </summary>
         /// <param name="right"></param>
