@@ -574,10 +574,16 @@ namespace GeneralTriggerKey
             for (int i = 0; i < register_bridge_key_ids.Length - 1; i++)
                 if (Keys.TryGetValue(register_bridge_key_ids[i], out var key1) && Keys.TryGetValue(register_bridge_key_ids[i + 1], out var key2))
                     if (key1 is IBridgeKey _key1 && key2 is IBridgeKey _key2)
+                    {
                         if (_key1.Next.Id != _key2.Current.Id)
                             throw new InvalidOperationException(message: $"Not support connect diff key link({_key1}-{_key2})");
-                        else
-                            return false;
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException(message: $"Not support connect non bridge key link({key1}-{key2})");
+                    }
+
+
 
             var key_hash = $"L-{_hashids.EncodeLong(register_bridge_key_ids)}";
             if (_created_level_key_cache.TryGetValue(key_hash, out level_key_runtime_id))

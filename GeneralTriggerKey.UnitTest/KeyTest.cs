@@ -277,7 +277,10 @@ namespace GeneralTriggerKey.UnitTest
             idC.AndWith(idD, out var idDC);
             idE.AndWith(idF, out var idEF);
 
-            idAB.DivideWith(idDC, out var idL12);
+            idAB.ConnectWith(idDC, 1, out var id1_2);
+            idDC.ConnectWith(idEF, 2, out var id2_3);
+
+            id1_2.DivideWith(id2_3,out var id_divide1);
 
             Console.WriteLine(ShowAllNodes());
 
