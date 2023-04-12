@@ -61,7 +61,7 @@ namespace GeneralTriggerKey.Key
 
             foreach (var data in DAGChildKeys)
             {
-                if (data is BridgeKey _bkey)
+                if (data is LevelKey _bkey)
                     _str_builder.Append($"{_bkey.ToString(_next_retraction)}\n");
                 else
                     _str_builder.Append($"{_prefix}  {data}\n");

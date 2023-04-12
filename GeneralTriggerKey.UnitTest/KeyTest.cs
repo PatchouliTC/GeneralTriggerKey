@@ -262,7 +262,7 @@ namespace GeneralTriggerKey.UnitTest
         }
 
         [TestMethod]
-        public void TestKeyDivide()
+        public void TestKeyDivide_v1()
         {
             var idA = KMStorageWrapper.Convert(MapTestEnum.A);
             var idB = KMStorageWrapper.Convert(MapTestEnum.B);
@@ -277,12 +277,41 @@ namespace GeneralTriggerKey.UnitTest
             idC.AndWith(idD, out var idDC);
             idE.AndWith(idF, out var idEF);
 
-            Assert.ThrowsException<InvalidOperationException>(() => idAB.DivideWith(idDC, out var idLTest));
-
             idAB.ConnectWith(idDC, 1, out var id1_2);
             idDC.ConnectWith(idEF, 2, out var id2_3);
 
             id1_2.DivideWith(id2_3,out var id_divide1);
+
+            Assert.IsTrue(id_divide1 > 0);
+
+            Console.WriteLine(ShowAllNodes());
+
+        }
+
+        [TestMethod]
+        public void TestKeyDivide_v2()
+        {
+            var idA = KMStorageWrapper.Convert(MapTestEnum.A);
+            var idB = KMStorageWrapper.Convert(MapTestEnum.B);
+            var idC = KMStorageWrapper.Convert(MapTestEnum.C);
+            var idD = KMStorageWrapper.Convert(MapTestEnum.D);
+            var idE = KMStorageWrapper.Convert(MapTestEnum.E);
+            var idF = KMStorageWrapper.Convert(MapTestEnum.F);
+            var idG = KMStorageWrapper.Convert(MapTestEnum.G);
+            var idH = KMStorageWrapper.Convert(MapTestEnum.H);
+
+            idA.AndWith(idB, out var idAB);
+            idC.AndWith(idD, out var idDC);
+            idE.AndWith(idF, out var idEF);
+
+            idAB.ConnectWith(idDC, 1, out var id1_2);
+            idDC.ConnectWith(idEF, 2, out var id2_3);
+
+            id1_2.DivideWith(id2_3, out var id_divide1);
+
+            id1_2.DivideWith(idE,out var id_divide2);
+
+            idAB.DivideWith(idC, out var id_divide3);
 
             Assert.IsTrue(id_divide1 > 0);
 
