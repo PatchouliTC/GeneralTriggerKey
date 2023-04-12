@@ -37,7 +37,7 @@ namespace GeneralTriggerKey.Utils.Extensions
                 }
                 //都是联合键且联合模式相等,比较关联的单一键列表超集关系
                 else if ((value1.IsMultiKey && value2.IsMultiKey &&
-                    ((value1 as IMultiKey)!.KeyRelateType == (value2 as IMultiKey)!.KeyRelateType)
+                    (value1.KeyRelateType == value2.KeyRelateType)
                     ))
                 {
                     return (value1 as IMultiKey)!.IsRSupersetOf((value2 as IMultiKey)!);
@@ -80,7 +80,7 @@ namespace GeneralTriggerKey.Utils.Extensions
                     return id1 == id2;
                 }
                 else if ((value1.IsMultiKey && value2.IsMultiKey &&
-                    ((value1 as IMultiKey)!.KeyRelateType == (value2 as IMultiKey)!.KeyRelateType)
+                    (value1.KeyRelateType == value2.KeyRelateType)
                     ))
                 {
                     return (value1 as IMultiKey)!.ROverlaps((value2 as IMultiKey)!);
@@ -125,7 +125,7 @@ namespace GeneralTriggerKey.Utils.Extensions
                     return value1.Id == value2.Id && value1.Id == _need_contain_key.Id;
                 }
                 //当前项是单键时,被比较项必须是or关系[and关系一定无法触发]
-                else if (!value1.IsMultiKey && value2.IsMultiKey && (value2 as IMultiKey)!.KeyRelateType == MapKeyType.OR)
+                else if (!value1.IsMultiKey && value2.IsMultiKey && value2.KeyRelateType == MapKeyType.OR)
                 {
                     if (_need_contain_key is null)
                         return value1.CanTriggerNode.Contains(value2.Id);
@@ -138,7 +138,7 @@ namespace GeneralTriggerKey.Utils.Extensions
                 }
                 //被比较项联合键+当前被比较对象能否触发目标对象
                 //当前项必须是and关系,or关系无比较意义
-                else if (value1.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == MapKeyType.AND)
+                else if (value1.IsMultiKey && value1.KeyRelateType == MapKeyType.AND)
                 {
                     var _multi_key = (value1 as IMultiKey);
                     //项2是单例键,直接看项1的singlekey是否包含即可
@@ -178,22 +178,22 @@ namespace GeneralTriggerKey.Utils.Extensions
         {
             if (KMStorageWrapper.TryGetKey(id1, out IKey value1) && KMStorageWrapper.TryGetKey(id2, out IKey value2))
             {
-                if (value1 is IBridgeKey bkey1 && value2 is IBridgeKey bkey2)
+                if (value1 is IBridgeKey bkey1 || value2 is IBridgeKey bkey2)
                 {
                     id_result = -1;
                     return false;
                 }
-                else if (value1 is ILevelKey lkey1 && value2 is ILevelKey lkey2)
+                else if (value1 is ILevelKey lkey1 || value2 is ILevelKey lkey2)
                 {
                     id_result = -1;
                     return false;
                 }
-                else if (value1.IsMultiKey && value2.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == (value2 as IMultiKey)!.KeyRelateType)
+                else if (value1.IsMultiKey && value2.IsMultiKey && value1.KeyRelateType == value2.KeyRelateType)
                 {
                     var _temp = (value1 as IMultiKey)!.RelateSingleKeys.ToHashSet();
                     _temp.SymmetricExceptWith((value2 as IMultiKey)!.RelateSingleKeys);
 
-                    return KMStorageWrapper.TryRegisterMultiKey(out id_result, (value1 as IMultiKey)!.KeyRelateType, _temp.ToArray());
+                    return KMStorageWrapper.TryRegisterMultiKey(out id_result, value1.KeyRelateType, _temp.ToArray());
                 }
                 else if ((value1.IsMultiKey && !value2.IsMultiKey) || (!value1.IsMultiKey && value2.IsMultiKey))
                 {
@@ -224,22 +224,22 @@ namespace GeneralTriggerKey.Utils.Extensions
 
             if (KMStorageWrapper.TryGetKey(id1, out IKey value1) && KMStorageWrapper.TryGetKey(id2, out IKey value2))
             {
-                if (value1 is IBridgeKey bkey1 && value2 is IBridgeKey bkey2)
+                if (value1 is IBridgeKey bkey1 || value2 is IBridgeKey bkey2)
                 {
                     id_result = -1;
                     return false;
                 }
-                else if (value1 is ILevelKey lkey1 && value2 is ILevelKey lkey2)
+                else if (value1 is ILevelKey lkey1 || value2 is ILevelKey lkey2)
                 {
                     id_result = -1;
                     return false;
                 }
-                else if (value1.IsMultiKey && value2.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == (value2 as IMultiKey)!.KeyRelateType)
+                else if (value1.IsMultiKey && value2.IsMultiKey && value1.KeyRelateType == value2.KeyRelateType)
                 {
                     var _temp = (value1 as IMultiKey)!.RelateSingleKeys.ToHashSet();
                     _temp.IntersectWith((value2 as IMultiKey)!.RelateSingleKeys);
 
-                    return KMStorageWrapper.TryRegisterMultiKey(out id_result, (value1 as IMultiKey)!.KeyRelateType, _temp.ToArray());
+                    return KMStorageWrapper.TryRegisterMultiKey(out id_result, value1.KeyRelateType, _temp.ToArray());
                 }
                 else if ((value1.IsMultiKey && !value2.IsMultiKey) || (!value1.IsMultiKey && value2.IsMultiKey))
                 {
@@ -297,8 +297,8 @@ namespace GeneralTriggerKey.Utils.Extensions
             {
                 //二者均不为or关系
                 if (
-                    !(value1.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == MapKeyType.OR) &&
-                    !(value2.IsMultiKey && (value2 as IMultiKey)!.KeyRelateType == MapKeyType.OR)
+                    !(value1.IsMultiKey && value1.KeyRelateType == MapKeyType.OR) &&
+                    !(value2.IsMultiKey && value2.KeyRelateType == MapKeyType.OR)
                     )
                 {
                     return KMStorageWrapper.TryRegisterMultiKey(out id_result, MapKeyType.AND, id1, id2);
@@ -307,8 +307,8 @@ namespace GeneralTriggerKey.Utils.Extensions
                 //拆开两组单列键进行AND操作的笛卡尔积
                 //最终获得的数组之间再进行or关系
                 else if (
-                    (value1.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == MapKeyType.OR) &&
-                    (value2.IsMultiKey && (value2 as IMultiKey)!.KeyRelateType == MapKeyType.OR)
+                    (value1.IsMultiKey && value1.KeyRelateType == MapKeyType.OR) &&
+                    (value2.IsMultiKey && value2.KeyRelateType == MapKeyType.OR)
                     )
                 {
                     var _single_relate_1 = (value1 as IMultiKey)!.RelateSingleKeys;
@@ -356,8 +356,8 @@ namespace GeneralTriggerKey.Utils.Extensions
                 //一个是or另一个单例键
                 else
                 {
-                    var _or_relate_instance = (value1.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == MapKeyType.OR) ? (value1 as IMultiKey) : (value2 as IMultiKey);
-                    var _single_instance = (value1.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == MapKeyType.OR) ? value2 : value1;
+                    var _or_relate_instance = (value1.IsMultiKey && value1.KeyRelateType == MapKeyType.OR) ? (value1 as IMultiKey) : (value2 as IMultiKey);
+                    var _single_instance = (value1.IsMultiKey && value1.KeyRelateType == MapKeyType.OR) ? value2 : value1;
 
                     var _single_relate = _or_relate_instance!.RelateSingleKeys;
 
@@ -417,8 +417,8 @@ namespace GeneralTriggerKey.Utils.Extensions
             {
                 //二者均不为or关系
                 if (
-                    !(value1.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == MapKeyType.OR) &&
-                    !(value2.IsMultiKey && (value2 as IMultiKey)!.KeyRelateType == MapKeyType.OR)
+                    !(value1.IsMultiKey && value1.KeyRelateType == MapKeyType.OR) &&
+                    !(value2.IsMultiKey && value2.KeyRelateType == MapKeyType.OR)
                     )
                 {
                     return KMStorageWrapper.TryRegisterMultiKeyIfExist(out id_result, MapKeyType.AND, id1, id2);
@@ -427,8 +427,8 @@ namespace GeneralTriggerKey.Utils.Extensions
                 //拆开两组单列键进行AND操作的笛卡尔积
                 //最终获得的数组之间再进行or关系
                 else if (
-                    (value1.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == MapKeyType.OR) &&
-                    (value2.IsMultiKey && (value2 as IMultiKey)!.KeyRelateType == MapKeyType.OR)
+                    (value1.IsMultiKey && value1.KeyRelateType == MapKeyType.OR) &&
+                    (value2.IsMultiKey && value2.KeyRelateType == MapKeyType.OR)
                     )
                 {
                     var _single_relate_1 = (value1 as IMultiKey)!.RelateSingleKeys;
@@ -476,8 +476,8 @@ namespace GeneralTriggerKey.Utils.Extensions
                 //一个是or另一个单例键
                 else
                 {
-                    var _or_relate_instance = (value1.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == MapKeyType.OR) ? (value1 as IMultiKey) : (value2 as IMultiKey);
-                    var _single_instance = (value1.IsMultiKey && (value1 as IMultiKey)!.KeyRelateType == MapKeyType.OR) ? value2 : value1;
+                    var _or_relate_instance = (value1.IsMultiKey && value1.KeyRelateType == MapKeyType.OR) ? (value1 as IMultiKey) : (value2 as IMultiKey);
+                    var _single_instance = (value1.IsMultiKey && value1.KeyRelateType == MapKeyType.OR) ? value2 : value1;
 
                     var _single_relate = _or_relate_instance!.RelateSingleKeys;
 

@@ -186,7 +186,6 @@ namespace GeneralTriggerKey
         public bool TryRegisterMultiKey(out long multi_key_runtime_id, MapKeyType keyType, long[] register_key_ids, bool only_try = false)
         {
             multi_key_runtime_id = -1;
-            register_key_ids = register_key_ids.Where(x => x != _any_node.Id).ToArray();
             if (register_key_ids.Length == 0)
                 return false;
 
@@ -197,33 +196,23 @@ namespace GeneralTriggerKey
                     multi_key_runtime_id = _single_key.Id;
                     return true;
                 }
-                else
-                {
-                    return false;
-                }
-
+                else return false;
             }
-
-            var _distinct_and_sort_ids = register_key_ids.Distinct().OrderBy(x => x);
-
-            var _key_hash = $"{Enums.GetName(keyType)}-{_hashids.EncodeLong(_distinct_and_sort_ids)}";
-
-            if (_created_multi_key_cache.TryGetValue(_key_hash, out multi_key_runtime_id))
-                return true;
-            else
-                if (only_try)
-                return false;
 
             //获取实际上的所有单一键
             var _fact_relate_all_single_keys = new HashSet<long>();
             if (keyType == MapKeyType.AND)
             {
-                foreach (var _id in _distinct_and_sort_ids)
+                foreach (var _id in register_key_ids)
                 {
                     if (Keys.TryGetValue(_id, out var _exist_key))
                     {
                         if (_exist_key is ILevelKey || _exist_key is IBridgeKey)
                             return false;
+                        //AND关系中,any节点没有实际意义,忽略
+                        if (_exist_key.Id == _any_node.Id)
+                            continue;
+
                         //针对联合key和单一key不同处理
                         if (_exist_key.IsMultiKey)
                         {
@@ -252,12 +241,18 @@ namespace GeneralTriggerKey
                 //Single对应了单例键+AND关系的复合键
                 //AND关系复合键不会再拆解,而是仅用当前AND复合键
                 //获取实际上的所有单例键+AND关系复合键
-                foreach (var _id in _distinct_and_sort_ids)
+                foreach (var _id in register_key_ids)
                 {
                     if (Keys.TryGetValue(_id, out var _exist_key))
                     {
                         if (_exist_key is ILevelKey || _exist_key is IBridgeKey)
                             return false;
+                        //OR关系中,出现ANY节点,直接返回ANY节点
+                        if (_exist_key.Id == _any_node.Id)
+                        {
+                            multi_key_runtime_id = _any_node.Id;
+                            return true;
+                        }
                         //针对联合key和单一key不同处理
                         //Or关系插入时候,如果键是AND,当作单例键看待,如果键是Or则拆开
                         if (_exist_key.IsMultiKey && (_exist_key as IMultiKey)!.KeyRelateType == MapKeyType.OR)
@@ -451,7 +446,7 @@ namespace GeneralTriggerKey
             _name_key_map.Add(_new_multi_key.Name!, _new_multi_key);
             _multi_key_map.Add(_new_multi_key.Id, _new_multi_key);
             multi_key_runtime_id = _new_multi_key.Id;
-            _created_multi_key_cache.Add(_key_hash, _new_multi_key.Id);
+            _created_multi_key_cache.Add(_after_hash, _new_multi_key.Id);
 
             return true;
 
