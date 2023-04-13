@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using IdGen;
 
 namespace GeneralTriggerKey
 {
@@ -51,7 +52,7 @@ namespace GeneralTriggerKey
         /// <param name="right"></param>
         /// <param name="force_contain_key">必须强制包含的key</param>
         /// <returns></returns>
-        public bool CanTrigger(GeneralKey right, GeneralKey? force_contain_key = null)
+        public bool CanTrigger(in GeneralKey right, in GeneralKey? force_contain_key = null)
         {
             if (force_contain_key is null)
                 return Id.CanTrigger(right.Id);
@@ -65,7 +66,7 @@ namespace GeneralTriggerKey
         /// <param name="level">层级</param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public GeneralKey Connect(GeneralKey key, int level = 1)
+        public GeneralKey Connect(in GeneralKey key, int level = 1)
         {
             if (Id.ConnectWith(key.Id, level, out var new_id))
             {
@@ -82,18 +83,18 @@ namespace GeneralTriggerKey
         /// <param name="right"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        public bool AndWithIfExist(GeneralKey right, out GeneralKey result)
+        public bool AndWithIfExist(in GeneralKey right, out GeneralKey result)
         {
-            if (Id.AndWith(right.Id, out var id))
+            if (Id.AndWith(right.Id, out var id) && KeyMapStorage.Instance.TryGetKey(id,out IKey newKey))
             {
-                result = new GeneralKey(id, true, MapKeyType.AND);
+                result = new GeneralKey(id, newKey.IsMultiKey, newKey.KeyRelateType);
                 return true;
             }
             result = default;
             return false;
         }
 
-        public bool Contains(GeneralKey right)
+        public bool Contains(in GeneralKey right)
         {
             return Id.Contains(right.Id);
         }
@@ -104,39 +105,39 @@ namespace GeneralTriggerKey
         /// <param name="left"></param>
         /// <param name="right"></param>
         /// <returns></returns>
-        public static bool operator *(GeneralKey left, GeneralKey right)
+        public static bool operator *(in GeneralKey left,in GeneralKey right)
         {
             return left.Id.CanTrigger(right.Id);
         }
-        public static GeneralKey operator &(GeneralKey left, GeneralKey right)
+        public static GeneralKey operator &(in GeneralKey left,in GeneralKey right)
         {
             if (!(left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || left.KeyType == MapKeyType.OR) ||
                 !(right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || right.KeyType == MapKeyType.OR)
             )
                 throw new InvalidOperationException(message: "Not Support or/and with non or/and");
 
-            if (left.Id.AndWith(right.Id, out var new_id))
-                return new GeneralKey(new_id, true, MapKeyType.AND);
+            if (left.Id.AndWith(right.Id, out var new_id) && KeyMapStorage.Instance.TryGetKey(new_id, out IKey newKey))
+                return new GeneralKey(new_id, newKey.IsMultiKey, newKey.KeyRelateType);
 
             (string l, string r) = MakeErrorString(left.Id, right.Id);
             throw new InvalidOperationException(message: $"Try Do Add operator for {l} and {r} Failed.");
         }
 
-        public static GeneralKey operator |(GeneralKey left, GeneralKey right)
+        public static GeneralKey operator |(in GeneralKey left, in GeneralKey right)
         {
             if (!(left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || left.KeyType == MapKeyType.OR) ||
                 !(right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || right.KeyType == MapKeyType.OR)
             )
                 throw new InvalidOperationException(message: "Not Support or/and with non or/and");
 
-            if (left.Id.OrWith(right.Id, out var new_id))
-                return new GeneralKey(new_id, true, MapKeyType.OR);
+            if (left.Id.OrWith(right.Id, out var new_id) && KeyMapStorage.Instance.TryGetKey(new_id, out IKey newKey))
+                return new GeneralKey(new_id, newKey.IsMultiKey, newKey.KeyRelateType);
 
             (string l, string r) = MakeErrorString(left.Id, right.Id);
             throw new InvalidOperationException(message: $"Try Do Or operator for {l} and {r} Failed.");
         }
 
-        public static GeneralKey operator ^(GeneralKey left, GeneralKey right)
+        public static GeneralKey operator ^(in GeneralKey left, in GeneralKey right)
         {
             if (!(left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || left.KeyType == MapKeyType.OR) ||
                 !(right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || right.KeyType == MapKeyType.OR)
@@ -152,7 +153,7 @@ namespace GeneralTriggerKey
             throw new InvalidOperationException(message: $"Try Do Xor operator for {l} and {r} Failed.");
         }
 
-        public static GeneralKey operator /(GeneralKey left, GeneralKey right)
+        public static GeneralKey operator /(in GeneralKey left, in GeneralKey right)
         {
             if (left.Id.DivideWith(right.Id, out var new_id))
             {
@@ -163,19 +164,19 @@ namespace GeneralTriggerKey
             throw new InvalidOperationException(message: $"Try Do divide operator for {l} and {r} Failed.");
         }
 
-        public static bool operator ==(GeneralKey left, GeneralKey right)
+        public static bool operator ==(in GeneralKey left,  in GeneralKey right)
         {
             return left.Id == right.Id && left.Id != 0;
         }
-        public static bool operator !=(GeneralKey left, GeneralKey right)
+        public static bool operator !=(in GeneralKey left, in GeneralKey right)
         {
             return left.Id != right.Id && left.Id != 0 && right.Id != 0;
         }
-        public static bool operator >=(GeneralKey left, GeneralKey right)
+        public static bool operator >=(in GeneralKey left, in GeneralKey right)
         {
             return left.Id.Contains(right.Id);
         }
-        public static bool operator <=(GeneralKey left, GeneralKey right)
+        public static bool operator <=(in GeneralKey left,in GeneralKey right)
         {
             return right.Id.Contains(left.Id);
         }
