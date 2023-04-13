@@ -367,9 +367,10 @@ namespace GeneralTriggerKey
             if (newMultiKey.KeyRelateType == MapKeyType.OR) (parentCache, childCache) = (childCache, parentCache);
 
             var relateChildKeyIgnoreKeyIds = new HashSet<long>();
+            var childCanTriggerNodes = new HashSet<long>();
 
             //遍历实际父节点
-            foreach(var parentId in parentCache)
+            foreach (var parentId in parentCache)
             {
                 Keys.TryGetValue(parentId, out var parent);
                 //如果父节点的子节点中存在即将转换为当前节点子节点的节点,断开其连接
@@ -388,7 +389,10 @@ namespace GeneralTriggerKey
                 {
                     //如果是联合键,取其所有关联单键
                     if (parent is IMultiKey multiParent)
+                    {
                         relateChildKeyIgnoreKeyIds.UnionWith(multiParent.RelateSingleKeys);
+                        childCanTriggerNodes.UnionWith(multiParent.CanTriggerNode);
+                    }
                     else
                         relateChildKeyIgnoreKeyIds.Add(parent.Id);
                 }
@@ -403,11 +407,16 @@ namespace GeneralTriggerKey
                 {
                     //如果是联合键,取其所有关联单键
                     if (child is IMultiKey multiChild)
+                    {
                         relateChildKeyIgnoreKeyIds.UnionWith(multiChild.RelateSingleKeys);
+                        childCanTriggerNodes.UnionWith(multiChild.CanTriggerNode);
+                    }
                     else
                         relateChildKeyIgnoreKeyIds.Add(child.Id);
                 }
             }
+
+            newMultiKey.CanTriggerNode.UnionWith(childCanTriggerNodes);
 
             //取交集,此时获取的是不存在于以上连接的节点的列表
             relateChildKeyIgnoreKeyIds.SymmetricExceptWith(newMultiKey.RelateSingleKeys);
@@ -443,7 +452,9 @@ namespace GeneralTriggerKey
                         }
                     }
                 }
+                newMultiKey.CanTriggerNode.UnionWith(keyInst.CanTriggerNode);
             }
+
             newMultiKey.NotifyUpperAddNode(newMultiKey.Id);
 
             //如果是OR关系,并且最终重新关联之后自身子节点为空,需要添加一个ANY节点作为触发

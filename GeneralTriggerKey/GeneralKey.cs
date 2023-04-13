@@ -111,7 +111,7 @@ namespace GeneralTriggerKey
         }
         public static GeneralKey operator &(in GeneralKey left,in GeneralKey right)
         {
-            if (!(left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || left.KeyType == MapKeyType.OR) ||
+            if (!(left.KeyType == MapKeyType.AND || left.KeyType == MapKeyType.NONE || left.KeyType == MapKeyType.OR) ||
                 !(right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || right.KeyType == MapKeyType.OR)
             )
                 throw new InvalidOperationException(message: "Not Support or/and with non or/and");
@@ -125,7 +125,7 @@ namespace GeneralTriggerKey
 
         public static GeneralKey operator |(in GeneralKey left, in GeneralKey right)
         {
-            if (!(left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || left.KeyType == MapKeyType.OR) ||
+            if (!(left.KeyType == MapKeyType.AND || left.KeyType == MapKeyType.NONE || left.KeyType == MapKeyType.OR) ||
                 !(right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || right.KeyType == MapKeyType.OR)
             )
                 throw new InvalidOperationException(message: "Not Support or/and with non or/and");
@@ -139,7 +139,7 @@ namespace GeneralTriggerKey
 
         public static GeneralKey operator ^(in GeneralKey left, in GeneralKey right)
         {
-            if (!(left.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || left.KeyType == MapKeyType.OR) ||
+            if (!(left.KeyType == MapKeyType.AND || left.KeyType == MapKeyType.NONE || left.KeyType == MapKeyType.OR) ||
                 !(right.KeyType == MapKeyType.AND || right.KeyType == MapKeyType.NONE || right.KeyType == MapKeyType.OR)
             )
                 throw new InvalidOperationException(message: "Not Support or/and with non or/and");

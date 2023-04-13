@@ -30,7 +30,7 @@ namespace GeneralTriggerKey.Key
             : base(id, keyType, name)
         {
             RelateSingleKeys = relatesinglekeys ?? new HashSet<long>();
-            CanTriggerNode.Add(Id);
+            CanTriggerNode.UnionWith(RelateSingleKeys);
 
             var nameBuilder = new StringBuilder();
             if (KeyRelateType == MapKeyType.AND)
