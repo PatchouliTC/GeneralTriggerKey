@@ -126,10 +126,25 @@ namespace GeneralTriggerKey.Utils.Extensions
                         if (currentId == KeyMapStorage.Instance.AnyTypeCode.Id) return false;
                         if (requireCheckId == KeyMapStorage.Instance.AnyTypeCode.Id) return true;
                     }
-                    else return false;
+                    else if (value2 is ILevelKey levelKey2)
+                    {
+                        //单键与层比较,取层左侧第一个节点的Current检查能否触发
+                        if (value1 is ISimpleNode simplekey1)
+                        {
+                            if (KeyMapStorage.Instance.TryGetKey(levelKey2.KeySequence[0], out IBridgeKey bridgeKey))
+                            {
+                                return bridgeKey.Current.CanTriggerNode.Contains(simplekey1.Id);
+                            }
+                        }
+                        //桥与层比较,检测桥触发节点是否具备目标seq
+                        else if (value1 is IBridgeKey bridgeKey1)
+                        {
+                            return levelKey2.KeySequence.Any(x => bridgeKey1.CanTriggerNode.Contains(x));
+                        }
+                    }
+                    return value1.CanTriggerNode.Contains(value2.Id);
                 }
-
-                return value1.CanTriggerNode.Contains(value2.Id);
+                return false;
 
                 //if (value1 is IBridgeKey bkey1 && value2 is IBridgeKey bkey2) return bkey1.CanTriggerNode.Contains(bkey2.Id);
                 //else if (value1 is ILevelKey lkey1 && value2 is ILevelKey lkey2) return lkey1.CanTriggerNode.Contains(lkey2.Id);
